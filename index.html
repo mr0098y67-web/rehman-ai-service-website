@@ -442,6 +442,46 @@ body{background:radial-gradient(ellipse 700px 520px at 82% 12%,rgba(111,77,177,.
 @media(max-width:900px){.hero{padding-top:72px;padding-bottom:68px;min-height:0}.hero-grid{gap:28px}}
 @media(max-width:640px){.hero{padding-top:52px;padding-bottom:58px}.hero h1{font-size:clamp(45px,12vw,64px)}.hero-grid{gap:18px}.hero-visual{padding:30px 4px}.preview{padding:24px 21px;transform:none}.chip{font-size:12px}}
 @media(prefers-reduced-motion:reduce){.hero-visual:after{animation:none}.preview{transform:none}}
+
+/* ---------------- account / firebase auth ---------------- */
+.auth-trigger{ display:inline-flex; align-items:center; gap:8px; }
+.auth-trigger .au-dot{ width:8px; height:8px; border-radius:50%; background:var(--ok); box-shadow:0 0 10px rgba(94,224,160,.8); }
+.auth-user-chip{ display:inline-flex; align-items:center; gap:9px; padding:6px 12px 6px 6px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.05); cursor:pointer; color:var(--text); font:inherit; }
+.auth-user-chip:hover{ border-color:var(--border-strong); }
+.auth-user-chip .au-av{ width:28px; height:28px; border-radius:50%; flex:0 0 auto; display:grid; place-items:center; background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#05101f; font-weight:800; font-size:12.5px; }
+.auth-user-chip .au-name{ max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13.5px; font-weight:700; }
+
+.auth-modal{ position:fixed; inset:0; z-index:130; display:grid; place-items:center; padding:20px; }
+.auth-modal[hidden]{ display:none; }
+.auth-backdrop{ position:absolute; inset:0; background:rgba(3,6,18,.74); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); }
+.auth-card{ position:relative; width:min(440px,100%); max-height:92vh; overflow:auto; background:linear-gradient(180deg,#0e1433,#0a0f24); border:1px solid var(--border-strong); border-radius:var(--radius); box-shadow:var(--shadow); padding:26px 24px 24px; }
+.auth-x{ position:absolute; top:12px; right:12px; width:34px; height:34px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.04); color:var(--muted); font-size:18px; line-height:1; cursor:pointer; }
+.auth-x:hover{ color:var(--text); border-color:var(--border-strong); }
+.auth-card h3{ font-size:20px; margin:0 0 6px; }
+.auth-sub{ color:var(--muted); font-size:14px; margin:0 0 18px; }
+.auth-msg{ font-size:13.5px; border-radius:var(--radius-sm); margin:0 0 12px; }
+.auth-msg:empty{ display:none; }
+.auth-msg.is-error{ padding:10px 12px; background:rgba(255,122,144,.12); border:1px solid rgba(255,122,144,.32); color:#ffd2da; }
+.auth-msg.is-ok{ padding:10px 12px; background:rgba(94,224,160,.12); border:1px solid rgba(94,224,160,.32); color:#cdf7e4; }
+.auth-google{ width:100%; justify-content:center; gap:10px; background:#fff; color:#111827; border:0; font-weight:700; }
+.auth-google:hover{ background:#eef2ff; }
+.auth-google svg{ width:19px; height:19px; }
+.auth-or{ display:flex; align-items:center; gap:12px; color:var(--muted-2); font-size:12.5px; margin:16px 0; }
+.auth-or::before, .auth-or::after{ content:""; height:1px; flex:1; background:var(--border); }
+.auth-form .field{ margin-bottom:12px; }
+.auth-actions{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:4px; }
+.auth-user{ display:flex; align-items:center; gap:12px; margin:4px 0 16px; }
+.auth-avatar{ width:46px; height:46px; border-radius:50%; flex:0 0 auto; display:grid; place-items:center; overflow:hidden; background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#05101f; font-weight:800; font-size:17px; }
+.auth-avatar img{ width:100%; height:100%; object-fit:cover; }
+.auth-user .au-meta{ min-width:0; }
+.auth-user strong{ display:block; font-size:15px; }
+.auth-user-email{ color:var(--muted); font-size:13.5px; word-break:break-all; }
+.auth-note{ color:var(--muted-2); font-size:12.5px; margin:14px 0 0; }
+.auth-hint{ color:var(--muted-2); font-size:12.5px; margin:10px 0 0; }
+@media (max-width:760px){
+  .header-cta .btn.ghost.auth-trigger{ display:inline-flex; padding:9px 13px; font-size:13px; }
+  .auth-user-chip .au-name{ display:none; }
+}
 </style>
 <noscript><style>#preloader{display:none !important} body.is-loading{overflow:auto} .nav-toggle{display:none}</style></noscript>
 </head>
@@ -500,6 +540,9 @@ body{background:radial-gradient(ellipse 700px 520px at 82% 12%,rgba(111,77,177,.
     </nav>
 
     <div class="header-cta">
+      <button class="btn ghost small auth-trigger" id="authBtn" type="button" aria-haspopup="dialog" aria-label="Sign in">
+        <span class="au-dot" aria-hidden="true"></span><span class="au-label">Sign in</span>
+      </button>
       <a class="btn ghost small" href="mailto:mr0098y67@gmail.com">Email us</a>
       <a class="btn primary small" href="#contact">Get a quote</a>
       <button class="nav-toggle" id="navToggle" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="primaryNav"><span></span></button>
@@ -743,6 +786,54 @@ body{background:radial-gradient(ellipse 700px 520px at 82% 12%,rgba(111,77,177,.
   </div>
 </footer>
 
+<div class="auth-modal" id="authModal" hidden>
+  <div class="auth-backdrop" data-auth-close></div>
+  <div class="auth-card" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <button class="auth-x" type="button" data-auth-close aria-label="Close account window">&times;</button>
+    <h3 id="authTitle">Sign in to Rehman AI Service</h3>
+    <p class="auth-sub" id="authSub">Save your quote requests and keep your details handy.</p>
+
+    <p class="auth-msg" id="authMsg" role="alert" aria-live="assertive"></p>
+
+    <div id="authForms">
+      <button class="btn auth-google" id="googleSignIn" type="button">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.2 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-2.8-.4-4.1H24v8.1h12.7c-.5 3.1-2.2 5.6-4.7 7.3l7.7 6c4.5-4.2 6.8-10.3 6.8-17.3z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.5-.8-3.1-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 17.3 0 20.5 0 24s.9 6.7 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.2 0 11.5-2 15.3-5.5l-7.7-6c-2.1 1.4-4.7 2.3-7.6 2.3-6.3 0-11.6-3.7-13.5-9.1l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+        Continue with Google
+      </button>
+
+      <div class="auth-or"><span>or use email</span></div>
+
+      <form class="auth-form" id="emailAuthForm" novalidate>
+        <div class="field">
+          <label for="authEmail">Email</label>
+          <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com">
+        </div>
+        <div class="field">
+          <label for="authPassword">Password</label>
+          <input id="authPassword" type="password" autocomplete="current-password" placeholder="At least 6 characters">
+        </div>
+        <div class="auth-actions">
+          <button class="btn primary small" type="submit" id="authSubmit">Sign in</button>
+          <button class="btn ghost small" type="button" id="authToggleMode">Create an account</button>
+        </div>
+      </form>
+      <p class="auth-hint" id="authHint">New here? Choose “Create an account”, or continue with Google.</p>
+    </div>
+
+    <div id="authUserBox" hidden>
+      <div class="auth-user">
+        <span class="auth-avatar" id="authAvatar" aria-hidden="true"></span>
+        <div class="au-meta">
+          <strong id="authUserName">—</strong>
+          <span class="auth-user-email" id="authUserEmail">—</span>
+        </div>
+      </div>
+      <button class="btn ghost small" id="authSignOut" type="button">Sign out</button>
+      <p class="auth-note">Your quote requests are saved to your account so we can follow up faster.</p>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -962,8 +1053,387 @@ body{background:radial-gradient(ellipse 700px 520px at 82% 12%,rgba(111,77,177,.
 })(typeof window !== 'undefined' ? window : this);
 
 </script>
+
+<!-- Firebase SDK (compat build: works with this page's plain JavaScript) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<script>
+/* Rehman AI Service — Firebase authentication + Firestore database.
+   Exposed as window.RehmanFirebase so the rest of the page can use it. */
+(function () {
+  'use strict';
+
+  /* Your web app's Firebase configuration (public client config). */
+  var FIREBASE_CONFIG = {
+    apiKey: "AIzaSyCEZSVNpVPo0-2J52ZsUkN3NKNTwOgwLdw",
+    authDomain: "rehman-ai-ce4e6.firebaseapp.com",
+    projectId: "rehman-ai-ce4e6",
+    storageBucket: "rehman-ai-ce4e6.firebasestorage.app",
+    messagingSenderId: "313904126408",
+    appId: "1:313904126408:web:a26571fe1ff348bd77c8fd"
+  };
+
+  var QUOTE_COLLECTION = 'quoteRequests';
+  var USERS_COLLECTION = 'users';
+
+  var FB = null, auth = null, db = null;
+  var state = { user: null, ready: false, listeners: [] };
+
+  try {
+    if (window.firebase && window.firebase.initializeApp) {
+      FB = window.firebase;
+      if (!FB.apps || !FB.apps.length) { FB.initializeApp(FIREBASE_CONFIG); }
+      auth = FB.auth();
+      try { db = FB.firestore(); } catch (e) { db = null; }
+      auth.onAuthStateChanged(function (user) {
+        state.user = user || null;
+        state.ready = true;
+        if (state.user) { saveUserProfile(state.user); }
+        for (var i = 0; i < state.listeners.length; i++) {
+          try { state.listeners[i](state.user); } catch (e) {}
+        }
+        renderTrigger();
+        renderModal();
+        prefillFromUser();
+      });
+    }
+  } catch (e) { /* Firebase unavailable — the site keeps working without it. */ }
+
+  /* ---------------- data helpers ---------------- */
+
+  function serverTimestamp() {
+    return (FB && FB.firestore) ? FB.firestore.FieldValue.serverTimestamp() : new Date();
+  }
+
+  function saveUserProfile(user) {
+    if (!db || !user) { return; }
+    try {
+      db.collection(USERS_COLLECTION).doc(user.uid).set({
+        uid: user.uid,
+        email: user.email || '',
+        displayName: user.displayName || '',
+        photoURL: user.photoURL || '',
+        lastLogin: serverTimestamp()
+      }, { merge: true }).catch(function () {});
+    } catch (e) {}
+  }
+
+  function saveQuoteRequest(data) {
+    data = data || {};
+    if (!db) { return Promise.resolve({ ok: false, reason: 'database-unavailable' }); }
+    var doc = {
+      name: String(data.name || ''),
+      email: String(data.email || ''),
+      message: String(data.message || ''),
+      quoteLines: data.quoteLines || [],
+      estimatedTotal: Number(data.estimatedTotal || 0),
+      units: Number(data.units || 0),
+      source: String(data.source || 'website'),
+      uid: state.user ? state.user.uid : null,
+      userEmail: state.user ? (state.user.email || null) : null,
+      createdAt: serverTimestamp()
+    };
+    return db.collection(QUOTE_COLLECTION).add(doc).then(function (ref) {
+      return { ok: true, id: ref.id };
+    }).catch(function (error) {
+      return { ok: false, reason: (error && error.code) ? error.code : 'write-failed' };
+    });
+  }
+
+  /* ---------------- ui helpers ---------------- */
+
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+    });
+  }
+
+  function initials(name) {
+    var parts = String(name || '').trim().split(/[\s._-]+/).filter(Boolean);
+    if (!parts.length) { return '?'; }
+    var out = parts[0].charAt(0);
+    if (parts.length > 1) { out += parts[1].charAt(0); }
+    return out.toUpperCase();
+  }
+
+  function displayNameOf(user) {
+    if (!user) { return ''; }
+    if (user.displayName) { return user.displayName; }
+    if (user.email) { return user.email.split('@')[0]; }
+    return 'Account';
+  }
+
+  function showMsg(text, kind) {
+    var el = document.getElementById('authMsg');
+    if (!el) { return; }
+    el.textContent = text || '';
+    el.className = 'auth-msg' + (text ? (' ' + (kind || 'is-error')) : '');
+  }
+
+  function friendlyError(error) {
+    var code = (error && error.code) ? error.code : '';
+    switch (code) {
+      case 'auth/unauthorized-domain':
+        return 'Yeh domain Firebase mein authorized nahi hai. Firebase Console → Authentication → Settings → Authorized domains mein rehmanai.publicvm.com add karein.';
+      case 'auth/popup-closed-by-user':
+      case 'auth/cancelled-popup-request':
+        return 'Google window band ho gayi. Dobara koshish karein.';
+      case 'auth/popup-blocked':
+        return 'Browser ne popup block kiya. Popups allow karke dobara koshish karein.';
+      case 'auth/operation-not-allowed':
+        return 'Yeh sign-in method Firebase Console mein enable nahi hai.';
+      case 'auth/configuration-not-found':
+        return 'Firebase authentication abhi configure nahi hui. Console mein Email/Password enable karein.';
+      case 'auth/invalid-email':
+        return 'Email address theek nahi lag raha.';
+      case 'auth/user-not-found':
+      case 'auth/wrong-password':
+      case 'auth/invalid-credential':
+        return 'Email ya password ghalat hai.';
+      case 'auth/email-already-in-use':
+        return 'Yeh email pehle se registered hai — “Sign in” chunein.';
+      case 'auth/weak-password':
+        return 'Password kam se kam 6 characters ka hona chahiye.';
+      case 'auth/too-many-requests':
+        return 'Bohot zyada koshishein. Kuch der baad dobara try karein.';
+      case 'auth/network-request-failed':
+        return 'Internet connection check karein aur dobara koshish karein.';
+      case 'auth/internal-error':
+        return 'Firebase Console mein Email/Password aur Google sign-in enable karein, phir dobara try karein.';
+      default:
+        return (error && error.message) ? error.message : 'Kuch masla ho gaya. Dobara koshish karein.';
+    }
+  }
+
+  /* ---------------- ui wiring ---------------- */
+
+  var mode = 'signin';
+
+  function renderTrigger() {
+    var btn = document.getElementById('authBtn');
+    if (!btn) { return; }
+    if (state.user) {
+      var name = displayNameOf(state.user);
+      btn.className = 'auth-user-chip';
+      btn.innerHTML = '<span class="au-av">' + esc(initials(name)) + '</span>' +
+        '<span class="au-name">' + esc(name) + '</span>';
+      btn.setAttribute('aria-label', 'Account: ' + name);
+    } else {
+      btn.className = 'btn ghost small auth-trigger';
+      btn.innerHTML = '<span class="au-dot" aria-hidden="true"></span><span class="au-label">Sign in</span>';
+      btn.setAttribute('aria-label', 'Sign in');
+    }
+  }
+
+  function setMode(next) {
+    mode = next === 'register' ? 'register' : 'signin';
+    var submit = document.getElementById('authSubmit');
+    var toggle = document.getElementById('authToggleMode');
+    var title = document.getElementById('authTitle');
+    var sub = document.getElementById('authSub');
+    var hint = document.getElementById('authHint');
+    if (mode === 'register') {
+      if (submit) { submit.textContent = 'Create account'; }
+      if (toggle) { toggle.textContent = 'I already have an account'; }
+      if (title) { title.textContent = 'Create your account'; }
+      if (sub) { sub.textContent = 'Sign up with email or Google to save your requests.'; }
+      if (hint) { hint.textContent = 'Use a real email — we reply to quote requests there.'; }
+    } else {
+      if (submit) { submit.textContent = 'Sign in'; }
+      if (toggle) { toggle.textContent = 'Create an account'; }
+      if (title) { title.textContent = 'Sign in to Rehman AI Service'; }
+      if (sub) { sub.textContent = 'Save your quote requests and keep your details handy.'; }
+      if (hint) { hint.textContent = 'New here? Choose “Create an account”, or continue with Google.'; }
+    }
+    showMsg('');
+  }
+
+  function renderModal() {
+    var forms = document.getElementById('authForms');
+    var box = document.getElementById('authUserBox');
+    if (!forms || !box) { return; }
+    if (state.user) {
+      forms.hidden = true;
+      box.hidden = false;
+      var name = displayNameOf(state.user);
+      var nameEl = document.getElementById('authUserName');
+      var emailEl = document.getElementById('authUserEmail');
+      var avEl = document.getElementById('authAvatar');
+      if (nameEl) { nameEl.textContent = name; }
+      if (emailEl) { emailEl.textContent = state.user.email || '(no email)'; }
+      if (avEl) {
+        avEl.innerHTML = state.user.photoURL
+          ? '<img src="' + esc(state.user.photoURL) + '" alt="" referrerpolicy="no-referrer">'
+          : esc(initials(name));
+      }
+    } else {
+      forms.hidden = false;
+      box.hidden = true;
+    }
+  }
+
+  function prefillFromUser() {
+    var user = state.user;
+    if (!user) { return; }
+    var email = document.getElementById('email');
+    var name = document.getElementById('name');
+    if (email && !email.value && user.email) { email.value = user.email; }
+    if (name && !name.value && user.displayName) { name.value = user.displayName; }
+  }
+
+  function openModal() {
+    var modal = document.getElementById('authModal');
+    if (!modal) { return; }
+    showMsg('');
+    renderModal();
+    modal.hidden = false;
+    document.body.classList.add('is-loading');
+    var focusEl = state.user ? document.getElementById('authSignOut') : document.getElementById('googleSignIn');
+    if (focusEl && focusEl.focus) { focusEl.focus(); }
+  }
+
+  function closeModal() {
+    var modal = document.getElementById('authModal');
+    if (!modal) { return; }
+    modal.hidden = true;
+    document.body.classList.remove('is-loading');
+    var password = document.getElementById('authPassword');
+    if (password) { password.value = ''; }
+  }
+
+  function signInWithGoogle() {
+    if (!auth) { showMsg('Sign-in abhi available nahi hai. Firebase load nahi hua.'); return; }
+    showMsg('');
+    var provider = new FB.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    var btn = document.getElementById('googleSignIn');
+    if (btn) { btn.disabled = true; }
+    auth.signInWithPopup(provider).then(function () {
+      closeModal();
+      if (window.RehmanToast) { window.RehmanToast('Signed in with Google ✅'); }
+    }).catch(function (error) {
+      var code = (error && error.code) || '';
+      if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment' || code === 'auth/web-storage-unsupported') {
+        auth.signInWithRedirect(provider).catch(function (e2) { showMsg(friendlyError(e2)); });
+        return;
+      }
+      showMsg(friendlyError(error));
+    }).then(function () {
+      if (btn) { btn.disabled = false; }
+    });
+  }
+
+  function submitEmailAuth(e) {
+    e.preventDefault();
+    if (!auth) { showMsg('Sign-in abhi available nahi hai. Firebase load nahi hua.'); return; }
+    var emailEl = document.getElementById('authEmail');
+    var passEl = document.getElementById('authPassword');
+    var email = emailEl ? emailEl.value.trim() : '';
+    var password = passEl ? passEl.value : '';
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { showMsg('Sahi email address likhein.'); return; }
+    if (password.length < 6) { showMsg('Password kam se kam 6 characters ka hona chahiye.'); return; }
+    showMsg('');
+    var submit = document.getElementById('authSubmit');
+    var old = submit ? submit.textContent : '';
+    if (submit) { submit.disabled = true; submit.textContent = mode === 'register' ? 'Creating…' : 'Signing in…'; }
+    var task = (mode === 'register')
+      ? auth.createUserWithEmailAndPassword(email, password)
+      : auth.signInWithEmailAndPassword(email, password);
+    task.then(function () {
+      closeModal();
+      if (window.RehmanToast) { window.RehmanToast('Signed in successfully ✅'); }
+    }).catch(function (error) {
+      showMsg(friendlyError(error));
+    }).then(function () {
+      if (submit) { submit.disabled = false; submit.textContent = old; }
+    });
+  }
+
+  /* ---------------- public api ---------------- */
+
+  window.RehmanFirebase = {
+    fb: FB,
+    auth: auth,
+    db: db,
+    config: FIREBASE_CONFIG,
+    getUser: function () { return state.user; },
+    isReady: function () { return state.ready; },
+    isConfigured: function () { return !!(auth && db); },
+    databaseEnabled: function () { return !!db; },
+    onAuthChange: function (cb) {
+      if (typeof cb !== 'function') { return; }
+      state.listeners.push(cb);
+      cb(state.user);
+    },
+    signOut: function () { return auth ? auth.signOut() : Promise.resolve(); },
+    signInWithGoogle: signInWithGoogle,
+    saveQuoteRequest: saveQuoteRequest,
+    openModal: openModal,
+    closeModal: closeModal
+  };
+
+  /* make the toast helper reusable from here */
+  if (!window.RehmanToast) {
+    window.RehmanToast = function (message) {
+      var toast = document.getElementById('toast');
+      if (!toast) { return; }
+      toast.textContent = message;
+      toast.classList.add('is-visible');
+      window.clearTimeout(window.__rehmanToastTimer);
+      window.__rehmanToastTimer = window.setTimeout(function () {
+        toast.classList.remove('is-visible');
+      }, 2600);
+    };
+  }
+
+  function wire() {
+    var btn = document.getElementById('authBtn');
+    var modal = document.getElementById('authModal');
+    if (btn) { btn.addEventListener('click', openModal); }
+    if (modal) {
+      Array.prototype.slice.call(modal.querySelectorAll('[data-auth-close]')).forEach(function (el) {
+        el.addEventListener('click', closeModal);
+      });
+    }
+    var google = document.getElementById('googleSignIn');
+    if (google) { google.addEventListener('click', signInWithGoogle); }
+    var form = document.getElementById('emailAuthForm');
+    if (form) { form.addEventListener('submit', submitEmailAuth); }
+    var toggle = document.getElementById('authToggleMode');
+    if (toggle) {
+      toggle.addEventListener('click', function () {
+        setMode(mode === 'register' ? 'signin' : 'register');
+      });
+    }
+    var out = document.getElementById('authSignOut');
+    if (out) {
+      out.addEventListener('click', function () {
+        window.RehmanFirebase.signOut().then(function () {
+          closeModal();
+          if (window.RehmanToast) { window.RehmanToast('Signed out.'); }
+        });
+      });
+    }
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && modal && !modal.hidden) { closeModal(); }
+    });
+    setMode('signin');
+    renderTrigger();
+    renderModal();
+    window.RehmanFirebase.onAuthChange(prefillFromUser);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', wire);
+  } else {
+    wire();
+  }
+})();
+</script>
 <script>
 /* Rehman AI Service — interface wiring (no dependencies). */
+
 (function () {
   'use strict';
 
@@ -1019,6 +1489,7 @@ body{background:radial-gradient(ellipse 700px 520px at 82% 12%,rgba(111,77,177,.
     window.clearTimeout(toastTimer);
     toastTimer = window.setTimeout(function () { toast.classList.remove('is-visible'); }, 2600);
   }
+  window.RehmanToast = showToast;
 
   /* ---------------- header / nav ---------------- */
   var header = document.getElementById('siteHeader');
@@ -1372,6 +1843,20 @@ body{background:radial-gradient(ellipse 700px 520px at 82% 12%,rgba(111,77,177,.
         _url: window.location.href,
         message: result.values.message + '\n\n' + AI.buildQuoteText(quote)
       };
+      /* Save the request to the Firebase database as well (best effort). */
+      if (window.RehmanFirebase && window.RehmanFirebase.saveQuoteRequest) {
+        window.RehmanFirebase.saveQuoteRequest({
+          name: result.values.name,
+          email: result.values.email,
+          message: result.values.message,
+          quoteLines: quote.lines.map(function (l) {
+            return { id: l.id, name: l.name, qty: l.qty, lineTotal: l.lineTotal };
+          }),
+          estimatedTotal: quote.subtotal,
+          units: quote.units,
+          source: 'website-quote-form'
+        });
+      }
       fetch('https://formsubmit.co/ajax/' + AI.CONTACT_EMAIL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
