@@ -547,6 +547,7 @@ html.auth-gate #toast{ visibility:hidden !important; }
 .auth-submit{ width:100%; padding:15px 22px; font-size:15px; letter-spacing:.02em; }
 .auth-toggle-link{ appearance:none; border:0; background:transparent; color:var(--gold); font:inherit; font-weight:700; font-size:13.5px; cursor:pointer; padding:8px 0 0; text-decoration:underline; text-underline-offset:3px; text-decoration-color:rgba(225,193,123,.4); }
 .auth-toggle-link:hover{ color:#f6e3b4; }
+.auth-forgot{ display:block; width:100%; text-align:center; margin-top:10px; }
 
 .auth-user{ display:flex; align-items:center; gap:14px; margin:0 0 20px; padding:16px; border-radius:var(--radius-sm); border:1px solid var(--border); background:rgba(255,255,255,.035); }
 .auth-avatar{ width:52px; height:52px; border-radius:50%; flex:0 0 auto; display:grid; place-items:center; overflow:hidden; background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#17120a; font-weight:800; font-size:18px; box-shadow:0 0 0 2px rgba(225,193,123,.25); }
@@ -917,14 +918,14 @@ document.documentElement.classList.add('auth-gate');</script>
           Continue with Google
         </button>
 
-        <div class="auth-or"><span>or continue with email</span></div>
+        <div class="auth-or" id="authOr"><span>or continue with email</span></div>
 
         <form class="auth-form" id="emailAuthForm" novalidate>
           <div class="field">
             <label for="authEmail">Email address</label>
             <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com">
           </div>
-          <div class="field">
+          <div class="field" id="authPasswordField">
             <label for="authPassword">Password</label>
             <input id="authPassword" type="password" autocomplete="current-password" placeholder="At least 6 characters">
           </div>
@@ -932,6 +933,7 @@ document.documentElement.classList.add('auth-gate');</script>
             <button class="btn primary auth-submit" type="submit" id="authSubmit">Sign in</button>
           </div>
         </form>
+        <button class="auth-toggle-link auth-forgot" type="button" id="authForgot">Forgot password?</button>
         <p class="auth-hint" id="authHint">New here? Choose &ldquo;Create an account&rdquo;, or continue with Google.</p>
         <button class="auth-toggle-link" type="button" id="authToggleMode">Create an account</button>
       </div>
@@ -1344,18 +1346,33 @@ document.documentElement.classList.add('auth-gate');</script>
   }
 
   function setMode(next) {
-    mode = next === 'register' ? 'register' : 'signin';
+    mode = (next === 'register' || next === 'reset') ? next : 'signin';
     var submit = document.getElementById('authSubmit');
     var toggle = document.getElementById('authToggleMode');
     var title = document.getElementById('authTitle');
     var sub = document.getElementById('authSub');
     var hint = document.getElementById('authHint');
+    var forgot = document.getElementById('authForgot');
+    var passField = document.getElementById('authPasswordField');
+    var google = document.getElementById('googleSignIn');
+    var orDiv = document.getElementById('authOr');
+    var isReset = mode === 'reset';
+    if (passField) { passField.hidden = isReset; }
+    if (google) { google.hidden = isReset; }
+    if (orDiv) { orDiv.hidden = isReset; }
+    if (forgot) { forgot.hidden = mode !== 'signin'; }
     if (mode === 'register') {
       if (submit) { submit.textContent = 'Create account'; }
       if (toggle) { toggle.textContent = 'I already have an account'; }
       if (title) { title.textContent = 'Create your account'; }
       if (sub) { sub.textContent = 'Sign up with email or Google to save your requests.'; }
       if (hint) { hint.textContent = 'Use a real email — we reply to quote requests there.'; }
+    } else if (isReset) {
+      if (submit) { submit.textContent = 'Send reset link'; }
+      if (toggle) { toggle.textContent = 'Back to sign in'; }
+      if (title) { title.textContent = 'Reset your password'; }
+      if (sub) { sub.textContent = 'Enter your account email and we will send a reset link.'; }
+      if (hint) { hint.textContent = 'We will email a secure link so you can set a new password.'; }
     } else {
       if (submit) { submit.textContent = 'Sign in'; }
       if (toggle) { toggle.textContent = 'Create an account'; }
@@ -1449,10 +1466,22 @@ document.documentElement.classList.add('auth-gate');</script>
     var email = emailEl ? emailEl.value.trim() : '';
     var password = passEl ? passEl.value : '';
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { showMsg('Sahi email address likhein.'); return; }
-    if (password.length < 6) { showMsg('Password kam se kam 6 characters ka hona chahiye.'); return; }
-    showMsg('');
     var submit = document.getElementById('authSubmit');
     var old = submit ? submit.textContent : '';
+    if (mode === 'reset') {
+      showMsg('');
+      if (submit) { submit.disabled = true; submit.textContent = 'Sending…'; }
+      auth.sendPasswordResetEmail(email).then(function () {
+        showMsg('Reset link bhej diya gaya hai. Apna email (inbox/spam) check karein.', 'is-ok');
+      }).catch(function (error) {
+        showMsg(friendlyError(error));
+      }).then(function () {
+        if (submit) { submit.disabled = false; submit.textContent = old; }
+      });
+      return;
+    }
+    if (password.length < 6) { showMsg('Password kam se kam 6 characters ka hona chahiye.'); return; }
+    showMsg('');
     if (submit) { submit.disabled = true; submit.textContent = mode === 'register' ? 'Creating…' : 'Signing in…'; }
     var task = (mode === 'register')
       ? auth.createUserWithEmailAndPassword(email, password)
@@ -1522,15 +1551,23 @@ document.documentElement.classList.add('auth-gate');</script>
     var toggle = document.getElementById('authToggleMode');
     if (toggle) {
       toggle.addEventListener('click', function () {
-        setMode(mode === 'register' ? 'signin' : 'register');
+        setMode((mode === 'register' || mode === 'reset') ? 'signin' : 'register');
       });
+    }
+    var forgot = document.getElementById('authForgot');
+    if (forgot) {
+      forgot.addEventListener('click', function () { setMode('reset'); });
     }
     var out = document.getElementById('authSignOut');
     if (out) {
       out.addEventListener('click', function () {
+        out.disabled = true;
         window.RehmanFirebase.signOut().then(function () {
-          closeModal();
+          setMode('signin');
+          window.RehmanFirebase.openModal();
           if (window.RehmanToast) { window.RehmanToast('Signed out.'); }
+        }).then(function () {
+          out.disabled = false;
         });
       });
     }
@@ -2066,6 +2103,7 @@ document.documentElement.classList.add('auth-gate');</script>
 
     function syncAuthTabs() {
       var m = (RF.getMode && RF.getMode()) || 'signin';
+      if (m === 'reset') { m = 'signin'; }
       authTabs.forEach(function (b) {
         var on = b.getAttribute('data-auth-tab') === m;
         b.classList.toggle('is-active', on);
