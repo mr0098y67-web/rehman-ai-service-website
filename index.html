@@ -443,44 +443,122 @@ body{background:radial-gradient(ellipse 700px 520px at 82% 12%,rgba(111,77,177,.
 @media(max-width:640px){.hero{padding-top:52px;padding-bottom:58px}.hero h1{font-size:clamp(45px,12vw,64px)}.hero-grid{gap:18px}.hero-visual{padding:30px 4px}.preview{padding:24px 21px;transform:none}.chip{font-size:12px}}
 @media(prefers-reduced-motion:reduce){.hero-visual:after{animation:none}.preview{transform:none}}
 
-/* ---------------- account / firebase auth ---------------- */
+/* ---------------- account / premium auth ---------------- */
+body.auth-locked{ overflow:hidden; }
 .auth-trigger{ display:inline-flex; align-items:center; gap:8px; }
 .auth-trigger .au-dot{ width:8px; height:8px; border-radius:50%; background:var(--ok); box-shadow:0 0 10px rgba(94,224,160,.8); }
 .auth-user-chip{ display:inline-flex; align-items:center; gap:9px; padding:6px 12px 6px 6px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.05); cursor:pointer; color:var(--text); font:inherit; }
 .auth-user-chip:hover{ border-color:var(--border-strong); }
-.auth-user-chip .au-av{ width:28px; height:28px; border-radius:50%; flex:0 0 auto; display:grid; place-items:center; background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#05101f; font-weight:800; font-size:12.5px; }
+.auth-user-chip .au-av{ width:28px; height:28px; border-radius:50%; flex:0 0 auto; display:grid; place-items:center; background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#17120a; font-weight:800; font-size:12.5px; }
 .auth-user-chip .au-name{ max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13.5px; font-weight:700; }
 
-.auth-modal{ position:fixed; inset:0; z-index:130; display:grid; place-items:center; padding:20px; }
+.auth-modal{ position:fixed; inset:0; z-index:200; display:grid; place-items:center; padding:clamp(12px,3vw,40px); }
 .auth-modal[hidden]{ display:none; }
-.auth-backdrop{ position:absolute; inset:0; background:rgba(3,6,18,.74); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); }
-.auth-card{ position:relative; width:min(440px,100%); max-height:92vh; overflow:auto; background:linear-gradient(180deg,#0e1433,#0a0f24); border:1px solid var(--border-strong); border-radius:var(--radius); box-shadow:var(--shadow); padding:26px 24px 24px; }
-.auth-x{ position:absolute; top:12px; right:12px; width:34px; height:34px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.04); color:var(--muted); font-size:18px; line-height:1; cursor:pointer; }
-.auth-x:hover{ color:var(--text); border-color:var(--border-strong); }
-.auth-card h3{ font-size:20px; margin:0 0 6px; }
-.auth-sub{ color:var(--muted); font-size:14px; margin:0 0 18px; }
-.auth-msg{ font-size:13.5px; border-radius:var(--radius-sm); margin:0 0 12px; }
+.auth-backdrop{
+  position:absolute; inset:0;
+  background:
+    radial-gradient(760px 560px at 14% 6%, rgba(225,193,123,.16), transparent 62%),
+    radial-gradient(720px 640px at 94% 98%, rgba(144,116,236,.20), transparent 60%),
+    rgba(4,5,9,.90);
+  -webkit-backdrop-filter:blur(16px) saturate(120%); backdrop-filter:blur(16px) saturate(120%);
+}
+
+.auth-shell{
+  position:relative; z-index:1; width:min(1010px,100%); max-height:94vh;
+  display:grid; grid-template-columns:1.04fr .96fr; border-radius:26px; overflow:hidden;
+  border:1px solid rgba(230,204,151,.26);
+  background:linear-gradient(160deg, rgba(27,26,34,.98), rgba(10,11,18,.99));
+  box-shadow:0 50px 130px rgba(0,0,0,.72), inset 0 1px rgba(255,255,255,.05);
+  animation:authRise .5s cubic-bezier(.2,.8,.3,1) both;
+}
+@keyframes authRise{ from{ opacity:0; transform:translateY(22px) scale(.985) } to{ opacity:1; transform:none } }
+
+/* brand / marketing side */
+.auth-brand{
+  position:relative; padding:clamp(28px,3.4vw,46px); display:flex; flex-direction:column; gap:26px; overflow:auto;
+  background:
+    radial-gradient(620px 430px at 12% 8%, rgba(225,193,123,.20), transparent 62%),
+    radial-gradient(540px 480px at 98% 92%, rgba(144,116,236,.22), transparent 60%),
+    linear-gradient(155deg,#131420,#0a0b12 72%);
+}
+.auth-brand:before{
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:.5;
+  background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+  background-size:58px 58px; -webkit-mask-image:linear-gradient(to bottom,black,transparent 84%); mask-image:linear-gradient(to bottom,black,transparent 84%);
+}
+.auth-brand:after{
+  content:"\2726"; position:absolute; right:30px; top:28px; color:#f0d99f; font-size:21px; text-shadow:0 0 30px #e1c17b;
+  animation:premiumTwinkle 4s ease-in-out infinite;
+}
+.auth-brand-top{ position:relative; display:inline-flex; align-items:center; gap:11px; font-weight:800; }
+.auth-brand-top .brand-mark{ width:40px; height:40px; filter:drop-shadow(0 6px 18px rgba(225,193,123,.28)); }
+.auth-brand-top .brand-name{ font-size:16px; }
+.auth-brand-body{ position:relative; margin-block:auto; }
+.auth-brand-body .eyebrow{ margin-bottom:14px; }
+.auth-brand-h{ font-family:Georgia,"Times New Roman",serif; font-weight:500; font-size:clamp(27px,2.7vw,40px); line-height:1.06; letter-spacing:-.035em; color:#f7f4ed; margin:0 0 14px; }
+.auth-brand-h em{ font-style:normal; background:linear-gradient(105deg,#f0d99f,#dfbf76 45%,#bda4ff 100%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.auth-brand-body p{ color:#b0b0b9; font-size:15px; line-height:1.75; max-width:38ch; margin:0 0 24px; }
+.auth-perks{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:14px; }
+.auth-perks li{ display:flex; align-items:center; gap:12px; color:#d7d5cf; font-size:14.5px; }
+.auth-perks .ap-ic{ flex:0 0 auto; width:34px; height:34px; border-radius:11px; display:grid; place-items:center; background:linear-gradient(140deg,rgba(225,193,123,.18),rgba(144,116,236,.18)); border:1px solid rgba(225,193,123,.30); color:#f0d99f; }
+.auth-perks .ap-ic svg{ width:17px; height:17px; }
+.auth-brand-foot{ position:relative; color:#7b7d88; font-size:12.5px; letter-spacing:.04em; margin:0; }
+
+/* form side */
+.auth-card{ position:relative; padding:clamp(26px,3.4vw,46px); overflow:auto; background:linear-gradient(180deg, rgba(18,19,28,.98), rgba(10,11,18,.99)); }
+.auth-card::-webkit-scrollbar{ width:8px; }
+.auth-card::-webkit-scrollbar-thumb{ background:rgba(225,193,123,.25); border-radius:99px; }
+.auth-x{ position:absolute; top:16px; right:16px; width:36px; height:36px; border-radius:11px; border:1px solid var(--border); background:rgba(255,255,255,.04); color:var(--muted); font-size:19px; line-height:1; cursor:pointer; transition:color .18s ease, border-color .18s ease, transform .18s ease; }
+.auth-x:hover{ color:var(--text); border-color:var(--border-strong); transform:rotate(90deg); }
+.auth-modal.is-gate .auth-x{ display:none; }
+.auth-badge{ display:inline-flex; align-items:center; gap:8px; font-size:11.5px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:#f0d99f; border:1px solid rgba(225,193,123,.32); background:rgba(225,193,123,.07); padding:6px 12px; border-radius:999px; margin-bottom:16px; }
+.auth-badge .au-dot{ width:7px; height:7px; border-radius:50%; background:var(--ok); box-shadow:0 0 8px rgba(94,224,160,.85); }
+.auth-card h3{ font-family:Georgia,"Times New Roman",serif; font-weight:500; font-size:clamp(24px,2.3vw,32px); letter-spacing:-.03em; margin:0 0 8px; color:#f7f4ed; }
+.auth-sub{ color:var(--muted); font-size:14.5px; margin:0 0 22px; line-height:1.6; }
+
+.auth-tabs{ display:flex; gap:6px; padding:5px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.035); margin-bottom:22px; }
+.auth-tab{ flex:1; appearance:none; border:0; background:transparent; color:var(--muted); font:inherit; font-weight:700; font-size:14px; padding:11px 12px; border-radius:999px; cursor:pointer; transition:color .2s ease, background .2s ease, box-shadow .2s ease; }
+.auth-tab:hover{ color:var(--text); }
+.auth-tab.is-active{ color:#17120a; background:linear-gradient(120deg,#f0d99f,#c8a65f); box-shadow:0 10px 24px rgba(195,158,82,.28); }
+
+.auth-msg{ font-size:13.5px; border-radius:var(--radius-sm); margin:0 0 14px; }
 .auth-msg:empty{ display:none; }
-.auth-msg.is-error{ padding:10px 12px; background:rgba(255,122,144,.12); border:1px solid rgba(255,122,144,.32); color:#ffd2da; }
-.auth-msg.is-ok{ padding:10px 12px; background:rgba(94,224,160,.12); border:1px solid rgba(94,224,160,.32); color:#cdf7e4; }
-.auth-google{ width:100%; justify-content:center; gap:10px; background:#fff; color:#111827; border:0; font-weight:700; }
-.auth-google:hover{ background:#eef2ff; }
+.auth-msg.is-error{ padding:11px 13px; background:rgba(255,122,144,.12); border:1px solid rgba(255,122,144,.32); color:#ffd2da; }
+.auth-msg.is-ok{ padding:11px 13px; background:rgba(94,224,160,.12); border:1px solid rgba(94,224,160,.32); color:#cdf7e4; }
+
+.auth-google{ width:100%; justify-content:center; gap:11px; background:#fbf7ee; color:#1a1712; border:1px solid rgba(230,204,151,.5); font-weight:700; padding:14px 20px; box-shadow:0 14px 32px rgba(0,0,0,.35); }
+.auth-google:hover{ background:#fff; box-shadow:0 18px 40px rgba(195,158,82,.24); }
 .auth-google svg{ width:19px; height:19px; }
-.auth-or{ display:flex; align-items:center; gap:12px; color:var(--muted-2); font-size:12.5px; margin:16px 0; }
-.auth-or::before, .auth-or::after{ content:""; height:1px; flex:1; background:var(--border); }
-.auth-form .field{ margin-bottom:12px; }
-.auth-actions{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:4px; }
-.auth-user{ display:flex; align-items:center; gap:12px; margin:4px 0 16px; }
-.auth-avatar{ width:46px; height:46px; border-radius:50%; flex:0 0 auto; display:grid; place-items:center; overflow:hidden; background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#05101f; font-weight:800; font-size:17px; }
+.auth-or{ display:flex; align-items:center; gap:14px; color:var(--muted-2); font-size:12px; letter-spacing:.12em; text-transform:uppercase; margin:20px 0; }
+.auth-or::before, .auth-or::after{ content:""; height:1px; flex:1; background:linear-gradient(90deg,transparent,rgba(230,204,151,.32),transparent); }
+
+.auth-form .field{ margin-bottom:15px; }
+.auth-form .field input{ padding:14px 16px; background:rgba(255,255,255,.045); border-color:rgba(230,204,151,.20); }
+.auth-form .field input:focus{ border-color:var(--accent); box-shadow:0 0 0 4px rgba(225,193,123,.16); }
+.auth-actions{ display:flex; flex-direction:column; gap:10px; margin-top:6px; }
+.auth-submit{ width:100%; padding:15px 22px; font-size:15px; letter-spacing:.02em; }
+.auth-toggle-link{ appearance:none; border:0; background:transparent; color:var(--gold); font:inherit; font-weight:700; font-size:13.5px; cursor:pointer; padding:8px 0 0; text-decoration:underline; text-underline-offset:3px; text-decoration-color:rgba(225,193,123,.4); }
+.auth-toggle-link:hover{ color:#f6e3b4; }
+
+.auth-user{ display:flex; align-items:center; gap:14px; margin:0 0 20px; padding:16px; border-radius:var(--radius-sm); border:1px solid var(--border); background:rgba(255,255,255,.035); }
+.auth-avatar{ width:52px; height:52px; border-radius:50%; flex:0 0 auto; display:grid; place-items:center; overflow:hidden; background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#17120a; font-weight:800; font-size:18px; box-shadow:0 0 0 2px rgba(225,193,123,.25); }
 .auth-avatar img{ width:100%; height:100%; object-fit:cover; }
 .auth-user .au-meta{ min-width:0; }
-.auth-user strong{ display:block; font-size:15px; }
+.auth-user strong{ display:block; font-size:16px; }
 .auth-user-email{ color:var(--muted); font-size:13.5px; word-break:break-all; }
-.auth-note{ color:var(--muted-2); font-size:12.5px; margin:14px 0 0; }
-.auth-hint{ color:var(--muted-2); font-size:12.5px; margin:10px 0 0; }
+.auth-note{ color:var(--muted-2); font-size:12.5px; margin:16px 0 0; line-height:1.6; }
+.auth-hint{ color:var(--muted-2); font-size:12.5px; margin:14px 0 0; line-height:1.6; }
+
+@media (max-width:900px){
+  .auth-shell{ grid-template-columns:1fr; }
+  .auth-brand{ display:none; }
+  .auth-card{ padding:34px 24px 28px; }
+}
 @media (max-width:760px){
   .header-cta .btn.ghost.auth-trigger{ display:inline-flex; padding:9px 13px; font-size:13px; }
   .auth-user-chip .au-name{ display:none; }
+  .auth-modal{ padding:10px; }
+  .auth-shell{ border-radius:22px; max-height:96vh; }
 }
 </style>
 <noscript><style>#preloader{display:none !important} body.is-loading{overflow:auto} .nav-toggle{display:none}</style></noscript>
@@ -788,48 +866,76 @@ body{background:radial-gradient(ellipse 700px 520px at 82% 12%,rgba(111,77,177,.
 
 <div class="auth-modal" id="authModal" hidden>
   <div class="auth-backdrop" data-auth-close></div>
-  <div class="auth-card" role="dialog" aria-modal="true" aria-labelledby="authTitle">
-    <button class="auth-x" type="button" data-auth-close aria-label="Close account window">&times;</button>
-    <h3 id="authTitle">Sign in to Rehman AI Service</h3>
-    <p class="auth-sub" id="authSub">Save your quote requests and keep your details handy.</p>
 
-    <p class="auth-msg" id="authMsg" role="alert" aria-live="assertive"></p>
-
-    <div id="authForms">
-      <button class="btn auth-google" id="googleSignIn" type="button">
-        <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.2 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-2.8-.4-4.1H24v8.1h12.7c-.5 3.1-2.2 5.6-4.7 7.3l7.7 6c4.5-4.2 6.8-10.3 6.8-17.3z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.5-.8-3.1-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 17.3 0 20.5 0 24s.9 6.7 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.2 0 11.5-2 15.3-5.5l-7.7-6c-2.1 1.4-4.7 2.3-7.6 2.3-6.3 0-11.6-3.7-13.5-9.1l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
-        Continue with Google
-      </button>
-
-      <div class="auth-or"><span>or use email</span></div>
-
-      <form class="auth-form" id="emailAuthForm" novalidate>
-        <div class="field">
-          <label for="authEmail">Email</label>
-          <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com">
-        </div>
-        <div class="field">
-          <label for="authPassword">Password</label>
-          <input id="authPassword" type="password" autocomplete="current-password" placeholder="At least 6 characters">
-        </div>
-        <div class="auth-actions">
-          <button class="btn primary small" type="submit" id="authSubmit">Sign in</button>
-          <button class="btn ghost small" type="button" id="authToggleMode">Create an account</button>
-        </div>
-      </form>
-      <p class="auth-hint" id="authHint">New here? Choose “Create an account”, or continue with Google.</p>
-    </div>
-
-    <div id="authUserBox" hidden>
-      <div class="auth-user">
-        <span class="auth-avatar" id="authAvatar" aria-hidden="true"></span>
-        <div class="au-meta">
-          <strong id="authUserName">—</strong>
-          <span class="auth-user-email" id="authUserEmail">—</span>
-        </div>
+  <div class="auth-shell">
+    <aside class="auth-brand">
+      <a class="auth-brand-top" href="#top" aria-label="Rehman AI Service home">
+        <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><use href="#logo-mark"></use></svg>
+        <span class="brand-name">Rehman <b>AI</b> Service</span>
+      </a>
+      <div class="auth-brand-body">
+        <span class="eyebrow">Member access</span>
+        <h2 class="auth-brand-h">Your private AI studio, <em>members only.</em></h2>
+        <p>Sign in to save quote requests, track your orders and get priority replies from the studio.</p>
+        <ul class="auth-perks">
+          <li><span class="ap-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14v16l-7-3-7 3z"/></svg></span><span>Save and revisit every quote request</span></li>
+          <li><span class="ap-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 6.2 6.4.5-4.9 4.2 1.5 6.3L12 16.9 6.4 20.2l1.5-6.3L3 9.7l6.4-.5z"/></svg></span><span>Priority replies and studio support</span></li>
+          <li><span class="ap-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg></span><span>Early access to new AI services</span></li>
+        </ul>
       </div>
-      <button class="btn ghost small" id="authSignOut" type="button">Sign out</button>
-      <p class="auth-note">Your quote requests are saved to your account so we can follow up faster.</p>
+      <p class="auth-brand-foot">&copy; 2026 Rehman AI Service</p>
+    </aside>
+
+    <div class="auth-card" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <button class="auth-x" type="button" data-auth-close aria-label="Close account window">&times;</button>
+
+      <span class="auth-badge"><span class="au-dot" aria-hidden="true"></span> Secure account</span>
+      <h3 id="authTitle">Sign in to Rehman AI Service</h3>
+      <p class="auth-sub" id="authSub">Save your quote requests and keep your details handy.</p>
+
+      <div class="auth-tabs" role="tablist" aria-label="Account">
+        <button class="auth-tab is-active" type="button" role="tab" data-auth-tab="signin" aria-selected="true">Sign in</button>
+        <button class="auth-tab" type="button" role="tab" data-auth-tab="register" aria-selected="false">Create account</button>
+      </div>
+
+      <p class="auth-msg" id="authMsg" role="alert" aria-live="assertive"></p>
+
+      <div id="authForms">
+        <button class="btn auth-google" id="googleSignIn" type="button">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.2 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-2.8-.4-4.1H24v8.1h12.7c-.5 3.1-2.2 5.6-4.7 7.3l7.7 6c4.5-4.2 6.8-10.3 6.8-17.3z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.5-.8-3.1-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 17.3 0 20.5 0 24s.9 6.7 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.2 0 11.5-2 15.3-5.5l-7.7-6c-2.1 1.4-4.7 2.3-7.6 2.3-6.3 0-11.6-3.7-13.5-9.1l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+          Continue with Google
+        </button>
+
+        <div class="auth-or"><span>or continue with email</span></div>
+
+        <form class="auth-form" id="emailAuthForm" novalidate>
+          <div class="field">
+            <label for="authEmail">Email address</label>
+            <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com">
+          </div>
+          <div class="field">
+            <label for="authPassword">Password</label>
+            <input id="authPassword" type="password" autocomplete="current-password" placeholder="At least 6 characters">
+          </div>
+          <div class="auth-actions">
+            <button class="btn primary auth-submit" type="submit" id="authSubmit">Sign in</button>
+          </div>
+        </form>
+        <p class="auth-hint" id="authHint">New here? Choose &ldquo;Create an account&rdquo;, or continue with Google.</p>
+        <button class="auth-toggle-link" type="button" id="authToggleMode">Create an account</button>
+      </div>
+
+      <div id="authUserBox" hidden>
+        <div class="auth-user">
+          <span class="auth-avatar" id="authAvatar" aria-hidden="true"></span>
+          <div class="au-meta">
+            <strong id="authUserName">&mdash;</strong>
+            <span class="auth-user-email" id="authUserEmail">&mdash;</span>
+          </div>
+        </div>
+        <button class="btn ghost small" id="authSignOut" type="button">Sign out</button>
+        <p class="auth-note">Your quote requests are saved to your account so we can follow up faster.</p>
+      </div>
     </div>
   </div>
 </div>
@@ -1370,7 +1476,9 @@ body{background:radial-gradient(ellipse 700px 520px at 82% 12%,rgba(111,77,177,.
     signInWithGoogle: signInWithGoogle,
     saveQuoteRequest: saveQuoteRequest,
     openModal: openModal,
-    closeModal: closeModal
+    closeModal: closeModal,
+    setMode: function (next) { setMode(next); },
+    getMode: function () { return mode; }
   };
 
   /* make the toast helper reusable from here */
@@ -1938,6 +2046,72 @@ body{background:radial-gradient(ellipse 700px 520px at 82% 12%,rgba(111,77,177,.
   /* ---------------- footer year ---------------- */
   var yearEl = document.getElementById('year');
   if (yearEl) { yearEl.textContent = String(new Date().getFullYear()); }
+
+  /* ---------------- premium auth page (tabs + login gate) ---------------- */
+  var authModalEl = document.getElementById('authModal');
+  if (authModalEl && window.RehmanFirebase) {
+    var RF = window.RehmanFirebase;
+    var authTabs = $all('[data-auth-tab]', authModalEl);
+
+    function syncAuthTabs() {
+      var m = (RF.getMode && RF.getMode()) || 'signin';
+      authTabs.forEach(function (b) {
+        var on = b.getAttribute('data-auth-tab') === m;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+    }
+
+    authTabs.forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (RF.setMode) { RF.setMode(b.getAttribute('data-auth-tab')); }
+        syncAuthTabs();
+      });
+    });
+    var authToggleEl = document.getElementById('authToggleMode');
+    if (authToggleEl) {
+      authToggleEl.addEventListener('click', function () { window.setTimeout(syncAuthTabs, 0); });
+    }
+    syncAuthTabs();
+
+    function authAvailable() { return !!RF.auth; }
+    var gateActive = false;
+
+    function setGate(on) {
+      gateActive = on;
+      authModalEl.classList.toggle('is-gate', on);
+      document.body.classList.toggle('auth-locked', on);
+      if (on) { RF.openModal(); }
+    }
+
+    RF.onAuthChange(function () {
+      if (!authAvailable()) { setGate(false); return; }
+      if (!RF.isReady()) { return; }
+      if (RF.getUser()) {
+        if (gateActive) { setGate(false); }
+      } else {
+        setGate(true);
+      }
+      syncAuthTabs();
+    });
+
+    /* while gated (not signed in) the page must not be dismissable */
+    document.addEventListener('click', function (e) {
+      if (!gateActive) { return; }
+      var t = e.target;
+      if (t && t.closest && t.closest('[data-auth-close]')) { e.preventDefault(); e.stopPropagation(); }
+    }, true);
+    document.addEventListener('keydown', function (e) {
+      if (gateActive && e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); }
+    }, true);
+
+    window.RehmanFirebase.closeModal = (function (orig) {
+      return function () {
+        if (gateActive) { return; }
+        return orig.apply(this, arguments);
+      };
+    })(RF.closeModal);
+  }
 
   /* ---------------- first paint ---------------- */
   syncAll();
