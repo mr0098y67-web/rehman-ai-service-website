@@ -445,6 +445,14 @@ body{background:radial-gradient(ellipse 700px 520px at 82% 12%,rgba(111,77,177,.
 
 /* ---------------- account / premium auth ---------------- */
 body.auth-locked{ overflow:hidden; }
+/* login gate: keep the site hidden until a signed-in user is confirmed */
+html.auth-gate body{ overflow:hidden; }
+html.auth-gate .site-header,
+html.auth-gate #main,
+html.auth-gate .site-footer,
+html.auth-gate .bg-fx,
+html.auth-gate .skip-link,
+html.auth-gate #toast{ visibility:hidden !important; }
 .auth-trigger{ display:inline-flex; align-items:center; gap:8px; }
 .auth-trigger .au-dot{ width:8px; height:8px; border-radius:50%; background:var(--ok); box-shadow:0 0 10px rgba(94,224,160,.8); }
 .auth-user-chip{ display:inline-flex; align-items:center; gap:9px; padding:6px 12px 6px 6px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.05); cursor:pointer; color:var(--text); font:inherit; }
@@ -564,6 +572,9 @@ body.auth-locked{ overflow:hidden; }
 <noscript><style>#preloader{display:none !important} body.is-loading{overflow:auto} .nav-toggle{display:none}</style></noscript>
 </head>
 <body class="is-loading">
+
+<script>/* login gate: lock the site before first paint until a signed-in user is confirmed */
+document.documentElement.classList.add('auth-gate');</script>
 
 <!-- inline icon sprite (no external assets) -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -2074,24 +2085,30 @@ body.auth-locked{ overflow:hidden; }
     }
     syncAuthTabs();
 
-    function authAvailable() { return !!RF.auth; }
     var gateActive = false;
 
     function setGate(on) {
       gateActive = on;
       authModalEl.classList.toggle('is-gate', on);
       document.body.classList.toggle('auth-locked', on);
-      if (on) { RF.openModal(); }
+      document.documentElement.classList.toggle('auth-gate', on);
+      if (on) {
+        RF.openModal();
+      } else if (!authModalEl.hidden) {
+        RF.closeModal();
+      } else {
+        document.body.classList.remove('is-loading');
+      }
     }
 
+    /* Fail closed: lock the site from the very first moment; it only unlocks
+       once Firebase confirms a signed-in user. If auth never loads, the site
+       stays locked. */
+    setGate(true);
+
     RF.onAuthChange(function () {
-      if (!authAvailable()) { setGate(false); return; }
-      if (!RF.isReady()) { return; }
-      if (RF.getUser()) {
-        if (gateActive) { setGate(false); }
-      } else {
-        setGate(true);
-      }
+      if (!RF.isReady()) { setGate(true); return; }
+      setGate(!RF.getUser());
       syncAuthTabs();
     });
 
