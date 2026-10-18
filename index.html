@@ -358,6 +358,12 @@ h2{ font-size:clamp(26px, 3.6vw, 40px); font-weight:800; }
 .faq-item[open] summary::after{ transform:rotate(45deg); }
 .faq-item .faq-body{ padding:0 20px 18px; color:var(--muted); font-size:14.5px; }
 
+/* ---------------- advertising ---------------- */
+.ad-section{ padding:18px 0 36px; }
+.ad-label{ display:block; margin:0 0 10px; color:var(--muted-2); font-size:11px; font-weight:700; letter-spacing:.12em; text-align:center; text-transform:uppercase; }
+.ad-banner{ display:flex; min-height:90px; justify-content:center; align-items:center; overflow:hidden; }
+.ad-banner iframe{ display:block; max-width:100%; border:0; }
+
 /* ---------------- footer ---------------- */
 .site-footer{ border-top:1px solid var(--border); padding:52px 0 34px; margin-top:20px; }
 .footer-grid{ display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:32px; }
@@ -405,6 +411,8 @@ h2{ font-size:clamp(26px, 3.6vw, 40px); font-weight:800; }
   .form-grid{ grid-template-columns:1fr; }
   .pay-grid{ grid-template-columns:repeat(2, 1fr); }
   .footer-grid{ grid-template-columns:1fr; gap:26px; }
+  .ad-section{ padding-bottom:28px; }
+  .ad-banner{ min-height:90px; }
   .header-cta .btn.primary{ padding:11px 16px; font-size:14px; }
   .brand-name{ font-size:15px; }
 }
@@ -844,7 +852,28 @@ document.documentElement.classList.add('auth-gate');</script>
       </div>
     </div>
   </section>
+
+  <!-- ======================= ADVERTISEMENT ======================= -->
+  <section class="ad-section" aria-label="Advertisement">
+    <div class="wrap">
+      <span class="ad-label">Advertisement</span>
+      <div class="ad-banner">
+        <script>
+          atOptions = {
+            'key' : 'db36abf33287d5b6613a642425cd8539',
+            'format' : 'iframe',
+            'height' : 90,
+            'width' : 728,
+            'params' : {}
+          };
+        </script>
+        <script src="https://bauval.org/22/db36abf33287d5b6613a642425cd8539"></script>
+      </div>
+    </div>
+  </section>
 </main>
+
+<script data-cfasync="false" src="https://bauval.org/14/65a4d74b952d363151a434f1e1be1d4c"></script>
 
 <footer class="site-footer">
   <div class="wrap">
