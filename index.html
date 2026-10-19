@@ -2280,7 +2280,7 @@ document.documentElement.classList.add('auth-gate');</script>
     try { window.emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY }); } catch (e) {}
     var msg = 'Aapka Rehman AI Service verification code hai: ' + code +
       '. Ye code 10 minute mein expire ho jayega. Agar aap ne ye request nahi ki to is email ko ignore karein.';
-    var params = {
+    var params = { company_name: 'Rehman AI Service', 
       email: email, to_email: email, user_email: email, recipient: email,
       otp: code, code: code, passcode: code, otp_code: code, verification_code: code,
       message: msg, subject: 'Rehman AI Service - Email verification code',
