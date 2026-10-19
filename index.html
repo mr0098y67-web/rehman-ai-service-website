@@ -787,8 +787,8 @@ document.documentElement.classList.add('auth-gate');</script>
               <p class="err" id="err-email" role="alert"></p>
             </div>
             <div class="field">
-              <label for="whatsapp">WhatsApp number <small class="opt">(optional)</small></label>
-              <input id="whatsapp" name="whatsapp" type="tel" autocomplete="tel" inputmode="tel" placeholder="e.g. +92 300 1234567" aria-describedby="err-whatsapp">
+              <label for="whatsapp">Your WhatsApp number</label>
+              <input id="whatsapp" name="whatsapp" type="tel" autocomplete="tel" inputmode="tel" placeholder="e.g. +92 300 1234567" required aria-describedby="err-whatsapp">
               <p class="err" id="err-whatsapp" role="alert"></p>
             </div>
             <div class="field full">
@@ -1143,7 +1143,7 @@ document.documentElement.classList.add('auth-gate');</script>
 
   function validateWhatsApp(v) {
     var s = String(v == null ? '' : v).replace(/[\s\-()]/g, '');
-    if (s === '') return { ok: true, value: '' };
+    if (s === '') return { ok: false, error: 'Please enter your WhatsApp number.' };
     if (!/^\+?\d{9,15}$/.test(s)) {
       return { ok: false, error: 'Enter a valid WhatsApp number, e.g. +92 300 1234567.' };
     }
