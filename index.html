@@ -786,6 +786,11 @@ document.documentElement.classList.add('auth-gate');</script>
               <input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" aria-describedby="err-email">
               <p class="err" id="err-email" role="alert"></p>
             </div>
+            <div class="field">
+              <label for="whatsapp">WhatsApp number <small class="opt">(optional)</small></label>
+              <input id="whatsapp" name="whatsapp" type="tel" autocomplete="tel" inputmode="tel" placeholder="e.g. +92 300 1234567" aria-describedby="err-whatsapp">
+              <p class="err" id="err-whatsapp" role="alert"></p>
+            </div>
             <div class="field full">
               <label for="message">Project details</label>
               <textarea id="message" name="message" placeholder="Tell us what you need — style, quantity, deadline, references…" aria-describedby="err-message"></textarea>
@@ -1136,6 +1141,15 @@ document.documentElement.classList.add('auth-gate');</script>
     return { ok: true, value: s };
   }
 
+  function validateWhatsApp(v) {
+    var s = String(v == null ? '' : v).replace(/[\s\-()]/g, '');
+    if (s === '') return { ok: true, value: '' };
+    if (!/^\+?\d{9,15}$/.test(s)) {
+      return { ok: false, error: 'Enter a valid WhatsApp number, e.g. +92 300 1234567.' };
+    }
+    return { ok: true, value: s };
+  }
+
   function computeQuote(items) {
     var lines = [], subtotal = 0, units = 0, hasStarting = false;
     items = items || [];
@@ -1165,12 +1179,13 @@ document.documentElement.classList.add('auth-gate');</script>
     var n = validateName(data.name); if (!n.ok) errors.name = n.error;
     var e = validateEmail(data.email); if (!e.ok) errors.email = e.error;
     var m = validateMessage(data.message); if (!m.ok) errors.message = m.error;
+    var w = validateWhatsApp(data.whatsapp); if (!w.ok) errors.whatsapp = w.error;
     var quote = data.quote;
     if (!quote || quote.isEmpty) errors.quote = 'Select at least one service above to request a quote.';
     return {
       ok: Object.keys(errors).length === 0,
       errors: errors,
-      values: { name: n.ok ? n.value : '', email: e.ok ? e.value : '', message: m.ok ? m.value : '' }
+      values: { name: n.ok ? n.value : '', email: e.ok ? e.value : '', whatsapp: w.ok ? w.value : '', message: m.ok ? m.value : '' }
     };
   }
 
@@ -1200,6 +1215,7 @@ document.documentElement.classList.add('auth-gate');</script>
     body.push('');
     body.push('Name: ' + String(opts.name == null ? '' : opts.name));
     body.push('Reply email: ' + String(opts.email == null ? '' : opts.email));
+    body.push('WhatsApp: ' + String(opts.whatsapp == null || opts.whatsapp === '' ? '(not provided)' : opts.whatsapp));
     body.push('');
     body.push('— Sent from the Rehman AI Service website');
     var href = 'mailto:' + to +
@@ -1231,6 +1247,7 @@ document.documentElement.classList.add('auth-gate');</script>
     validateQuantity: validateQuantity,
     validateName: validateName,
     validateEmail: validateEmail,
+    validateWhatsApp: validateWhatsApp,
     validateMessage: validateMessage,
     validateContact: validateContact,
     computeQuote: computeQuote,
@@ -1981,6 +1998,8 @@ document.documentElement.classList.add('auth-gate');</script>
   var nameInput = document.getElementById('name');
   var emailInput = document.getElementById('email');
   var messageInput = document.getElementById('message');
+  var whatsappInput = document.getElementById('whatsapp');
+  var errWhatsapp = document.getElementById('err-whatsapp');
   var errName = document.getElementById('err-name');
   var errEmail = document.getElementById('err-email');
   var errMessage = document.getElementById('err-message');
@@ -1997,6 +2016,7 @@ document.documentElement.classList.add('auth-gate');</script>
     setFieldError(nameInput, errName, '');
     setFieldError(emailInput, errEmail, '');
     setFieldError(messageInput, errMessage, '');
+    setFieldError(whatsappInput, errWhatsapp, '');
     if (errQuote) { errQuote.textContent = ''; }
   }
 
@@ -2021,6 +2041,13 @@ document.documentElement.classList.add('auth-gate');</script>
     });
     messageInput.addEventListener('input', function () { setFieldError(messageInput, errMessage, ''); });
   }
+  if (whatsappInput) {
+    whatsappInput.addEventListener('blur', function () {
+      var r = AI.validateWhatsApp(whatsappInput.value);
+      setFieldError(whatsappInput, errWhatsapp, r.ok ? '' : r.error);
+    });
+    whatsappInput.addEventListener('input', function () { setFieldError(whatsappInput, errWhatsapp, ''); });
+  }
 
   if (form) {
     form.addEventListener('submit', function (e) {
@@ -2030,6 +2057,7 @@ document.documentElement.classList.add('auth-gate');</script>
       var result = AI.validateContact({
         name: nameInput ? nameInput.value : '',
         email: emailInput ? emailInput.value : '',
+        whatsapp: whatsappInput ? whatsappInput.value : '',
         message: messageInput ? messageInput.value : '',
         quote: quote
       });
@@ -2037,6 +2065,7 @@ document.documentElement.classList.add('auth-gate');</script>
         if (result.errors.name) { setFieldError(nameInput, errName, result.errors.name); }
         if (result.errors.email) { setFieldError(emailInput, errEmail, result.errors.email); }
         if (result.errors.message) { setFieldError(messageInput, errMessage, result.errors.message); }
+        if (result.errors.whatsapp) { setFieldError(whatsappInput, errWhatsapp, result.errors.whatsapp); }
         if (result.errors.quote && errQuote) { errQuote.textContent = result.errors.quote; }
         var firstBad = form.querySelector('[aria-invalid="true"]');
         if (firstBad && firstBad.focus) { firstBad.focus(); }
@@ -2050,6 +2079,7 @@ document.documentElement.classList.add('auth-gate');</script>
       var mail = AI.buildMailto({
         name: result.values.name,
         email: result.values.email,
+        whatsapp: result.values.whatsapp,
         message: result.values.message,
         quote: quote,
         contactEmail: AI.CONTACT_EMAIL
@@ -2065,6 +2095,7 @@ document.documentElement.classList.add('auth-gate');</script>
       var payload = {
         name: result.values.name,
         email: result.values.email,
+        whatsapp: result.values.whatsapp,
         _replyto: result.values.email,
         _subject: 'New Rehman AI Service quote request',
         _url: window.location.href,
@@ -2075,6 +2106,7 @@ document.documentElement.classList.add('auth-gate');</script>
         window.RehmanFirebase.saveQuoteRequest({
           name: result.values.name,
           email: result.values.email,
+          whatsapp: result.values.whatsapp,
           message: result.values.message,
           quoteLines: quote.lines.map(function (l) {
             return { id: l.id, name: l.name, qty: l.qty, lineTotal: l.lineTotal };
