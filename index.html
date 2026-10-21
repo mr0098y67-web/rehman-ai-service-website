@@ -2124,22 +2124,26 @@ document.documentElement.classList.add('auth-gate');</script>
       /* Ask our AI voice agent to call the visitor back (best effort). */
       var callbackScheduled = false;
       var callbackPromise = Promise.resolve();
-      if (AI.CALLBACK_ENDPOINT) {
-        callbackPromise = fetch(AI.CALLBACK_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: result.values.name,
-            phone: result.values.whatsapp,
-            email: result.values.email,
-            details: result.values.message,
-            services: AI.buildQuoteText(quote),
-            estimatedTotal: quote.subtotal,
-            source: 'website-quote-form'
-          })
-        }).then(function (r) { return r.ok ? r.json() : null; })
-          .then(function (data) { callbackScheduled = !!(data && data.scheduled); })
-          .catch(function () { callbackScheduled = false; });
+      try {
+        if (AI.CALLBACK_ENDPOINT) {
+          callbackPromise = fetch(AI.CALLBACK_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: result.values.name,
+              phone: result.values.whatsapp,
+              email: result.values.email,
+              details: result.values.message,
+              services: AI.buildQuoteText(quote),
+              estimatedTotal: quote.subtotal,
+              source: 'website-quote-form'
+            })
+          }).then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) { callbackScheduled = !!(data && data.scheduled); })
+            .catch(function () { callbackScheduled = false; });
+        }
+      } catch (callbackError) {
+        callbackPromise = Promise.resolve();
       }
       fetch('https://formsubmit.co/ajax/' + AI.CONTACT_EMAIL, {
         method: 'POST',

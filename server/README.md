@@ -2,6 +2,21 @@
 
 Website quote form bharne par agent khud visitor ko call karta hai.
 
+## Abhi kya karna hai (checklist)
+
+1. **ElevenLabs API key banao**: elevenlabs.io -> Profile -> API Keys -> Create API Key.
+   Key kisi ko share mat karein; sirf server ke env var mein daalein.
+2. **Backend deploy karo** (Option A ya B neeche). Function/host ka public HTTPS URL
+   mil jayega, jaise `https://rehman-ai-callback-xxxx.twil.io/callback`.
+3. **Website par endpoint set karo**: `index.html` mein `var CALLBACK_ENDPOINT = '';`
+   ko us URL se replace karo (ya farwaha assistant ko bolein, woh karega + push karega).
+4. **Twilio paid upgrade** (sirf tab jab asli customers ko call karna ho).
+   Trial account mein outbound call sirf Verified Caller IDs (aapka number) par jata hai.
+5. **Test**: website form bhar ke apne number par call check karein.
+
+Jab tak step 3 nahi hota, site aaj jaisa hi hai (sirf email) — koi visitor ko
+unexpected call nahi jayega.
+
 ## Flow
 
 1. Visitor site ka quote form bhar-ta hai (name, WhatsApp number, services).
