@@ -1038,6 +1038,10 @@ document.documentElement.classList.add('auth-gate');</script>
   'use strict';
 
   var CONTACT_EMAIL = 'mr0098y67@gmail.com';
+  /* Callback endpoint: the server that asks our AI voice agent to call the
+     visitor back after this form is sent. Leave it empty ('') and nothing
+     changes on the site. See server/README.md for how to set it up. */
+  var CALLBACK_ENDPOINT = '';
 
   var SERVICES = [
     {
@@ -1239,6 +1243,7 @@ document.documentElement.classList.add('auth-gate');</script>
 
   var api = {
     CONTACT_EMAIL: CONTACT_EMAIL,
+    CALLBACK_ENDPOINT: CALLBACK_ENDPOINT,
     SERVICES: SERVICES,
     PAYMENT_METHODS: PAYMENT_METHODS,
     findService: findService,
@@ -2116,6 +2121,26 @@ document.documentElement.classList.add('auth-gate');</script>
           source: 'website-quote-form'
         });
       }
+      /* Ask our AI voice agent to call the visitor back (best effort). */
+      var callbackScheduled = false;
+      var callbackPromise = Promise.resolve();
+      if (AI.CALLBACK_ENDPOINT) {
+        callbackPromise = fetch(AI.CALLBACK_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: result.values.name,
+            phone: result.values.whatsapp,
+            email: result.values.email,
+            details: result.values.message,
+            services: AI.buildQuoteText(quote),
+            estimatedTotal: quote.subtotal,
+            source: 'website-quote-form'
+          })
+        }).then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (data) { callbackScheduled = !!(data && data.scheduled); })
+          .catch(function () { callbackScheduled = false; });
+      }
       fetch('https://formsubmit.co/ajax/' + AI.CONTACT_EMAIL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
@@ -2128,7 +2153,11 @@ document.documentElement.classList.add('auth-gate');</script>
           return data;
         });
       }).then(function () {
-        showToast('Request received successfully ✨ Our team will get back to you soon. 📩');
+        return callbackPromise;
+      }).then(function () {
+        showToast(callbackScheduled
+          ? 'Request received successfully ✨ Our AI assistant will call you shortly to confirm the details. 📞'
+          : 'Request received successfully ✨ Our team will get back to you soon. 📩');
         form.reset();
         clearFormErrors();
       }).catch(function (error) {
