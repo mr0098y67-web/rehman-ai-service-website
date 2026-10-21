@@ -78,6 +78,17 @@ node server/standalone.js
 Phir us host ka HTTPS URL `CALLBACK_ENDPOINT` mein daalein.
 Local test ke liye `cloudflared tunnel --url http://localhost:8787` bhi chalta hai.
 
+Windows par ready-made script: `server/start-tunnel.ps1` (`.env` banata hai, server
++tunnel chala ke public URL print karta hai):
+
+```
+winget install --id Cloudflare.cloudflared
+powershell -ExecutionPolicy Bypass -File server\start-tunnel.ps1
+```
+
+Note: quick tunnel ka URL har restart par badal jata hai aur PC on rehna chahiye —
+permanent ke liye Twilio Functions (Option A) behtar hai.
+
 ## Test
 
 ```bash
