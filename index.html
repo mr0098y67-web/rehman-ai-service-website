@@ -666,6 +666,8 @@ html.auth-gate #toast{ visibility:hidden !important; }
   .header-cta .btn.primary{ display:none; }
 }
 </style>
+<style>/* added: hide WhatsApp button + voice-call widget on the sign-in / create-account screen */
+html.auth-gate .rai-wa-btn, html.auth-gate elevenlabs-convai, body.auth-locked .rai-wa-btn, body.auth-locked elevenlabs-convai{ display:none !important; }</style>
 </head>
 <body class="is-loading">
 
