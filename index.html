@@ -633,6 +633,38 @@ html.auth-gate #toast{ visibility:hidden !important; }
 .rai-offer-msg.is-ok{ color:var(--ok); }
 .rai-offer-msg.is-bad{ color:var(--danger); }
 .rai-offer-prices{ display:block; margin-top:4px; font-weight:600; color:var(--muted); font-size:12.5px; }
+
+/* added: phone layout fixes (mobile only; desktop >1020px untouched) */
+@media (max-width:1020px){
+  .hero-grid{ grid-template-columns:1fr; }
+}
+@media (max-width:768px){
+  html{ overflow-x:hidden; }
+  body{ overflow-x:clip; }
+  img, video, iframe, canvas{ max-width:100%; }
+  .header-inner{ gap:10px; width:calc(100% - 24px); }
+  .brand{ min-width:0; gap:8px; }
+  .brand-mark{ width:32px; height:32px; }
+  .brand-name{ overflow:hidden; text-overflow:ellipsis; }
+  .header-cta{ margin-left:auto; gap:8px; flex:0 0 auto; }
+  .hero-visual{ padding:24px 0; }
+  .preview{ max-width:100%; }
+  .sc-price{ flex-wrap:wrap; row-gap:2px; }
+  .auth-shell{ max-height:calc(100vh - 20px); max-height:calc(100dvh - 20px); }
+  .auth-card{ padding-bottom:96px; }
+}
+@media (max-width:480px){
+  .brand-name{ font-size:14.5px; }
+  .header-cta .btn.ghost.auth-trigger{ padding:8px 11px; font-size:12.5px; }
+}
+@media (max-width:380px){
+  .header-inner{ gap:8px; }
+  .brand-name{ font-size:13.5px; }
+  .header-cta .btn.ghost.auth-trigger{ padding:8px 10px; }
+}
+@media (max-width:430px){
+  .header-cta .btn.primary{ display:none; }
+}
 </style>
 </head>
 <body class="is-loading">
