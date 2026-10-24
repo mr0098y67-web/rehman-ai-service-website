@@ -668,6 +668,11 @@ html.auth-gate #toast{ visibility:hidden !important; }
 </style>
 <style>/* added: hide WhatsApp button + voice-call widget on the sign-in / create-account screen */
 html.auth-gate .rai-wa-btn, html.auth-gate elevenlabs-convai, body.auth-locked .rai-wa-btn, body.auth-locked elevenlabs-convai{ display:none !important; }</style>
+<style>
+  /* ---- added: automation demo samples (16:9 videos, scoped rai- classes) ---- */
+  .rai-sample.rai-sample--wide{ grid-column:span 2; }
+  .rai-sample--wide .rai-sample-media{ aspect-ratio:16/9; }
+</style>
 </head>
 <body class="is-loading">
 
@@ -878,6 +883,22 @@ document.documentElement.classList.add('auth-gate');</script>
             <img src="samples/sardar-ad-still-3.jpg" alt="AI photo sample: Sardar Babar Ali Dogar portrait at a housing site" loading="lazy" decoding="async">
           </div>
           <figcaption><span class="rai-sample-tag">AI Photo</span> Sardar Babar Ali Dogar portrait</figcaption>
+        </figure>
+        <figure class="card rai-sample rai-sample--wide reveal">
+          <div class="rai-sample-media">
+            <video controls playsinline preload="none" poster="samples/automation-n8n-poster.jpg">
+              <source src="samples/automation-n8n.mp4" type="video/mp4">
+            </video>
+          </div>
+          <figcaption><span class="rai-sample-tag">Automation</span> n8n Automation – WhatsApp AI reply + lead save</figcaption>
+        </figure>
+        <figure class="card rai-sample rai-sample--wide reveal">
+          <div class="rai-sample-media">
+            <video controls playsinline preload="none" poster="samples/automation-make-poster.jpg">
+              <source src="samples/automation-make.mp4" type="video/mp4">
+            </video>
+          </div>
+          <figcaption><span class="rai-sample-tag">Automation</span> Make.com Automation – form → quote email + WhatsApp alert</figcaption>
         </figure>
       </div>
     </div>
