@@ -618,6 +618,21 @@ html.auth-gate #toast{ visibility:hidden !important; }
 .rai-wa-btn{ position:fixed; left:18px; bottom:18px; z-index:2147483000; width:56px; height:56px; border-radius:50%; background:#25D366; color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px rgba(0,0,0,.35); text-decoration:none; transition:transform .2s ease, box-shadow .2s ease; }
 .rai-wa-btn:hover, .rai-wa-btn:focus-visible{ transform:scale(1.07); box-shadow:0 10px 28px rgba(37,211,102,.45); outline:none; }
 .rai-wa-btn svg{ width:30px; height:30px; display:block; fill:#fff; }
+
+/* added: 50% offer bar + coupon (scoped .rai-offer-*) */
+.rai-offer-bar{ position:relative; z-index:1; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:4px 10px; padding:8px 14px; text-align:center; font-size:13.5px; line-height:1.35; font-weight:700; color:#17120a; background:linear-gradient(90deg, var(--accent), var(--gold), var(--accent-2)); }
+.rai-offer-bar[hidden]{ display:none !important; }
+.rai-offer-bar .rai-offer-code{ display:inline-block; padding:1px 8px; border-radius:999px; background:rgba(0,0,0,.18); letter-spacing:.06em; font-weight:800; }
+.rai-offer-bar .rai-offer-timer{ font-variant-numeric:tabular-nums; font-weight:800; white-space:nowrap; }
+@media (max-width:560px){ .rai-offer-bar{ font-size:12.5px; padding:7px 10px; } }
+.rai-offer-coupon .rai-offer-row{ display:flex; gap:10px; align-items:stretch; }
+.rai-offer-coupon .rai-offer-row input{ flex:1 1 auto; min-width:0; text-transform:uppercase; }
+.rai-offer-coupon .rai-offer-row .btn{ flex:0 0 auto; }
+.rai-offer-msg{ margin:8px 0 0; font-size:13.5px; font-weight:700; min-height:0; }
+.rai-offer-msg:empty{ display:none; }
+.rai-offer-msg.is-ok{ color:var(--ok); }
+.rai-offer-msg.is-bad{ color:var(--danger); }
+.rai-offer-prices{ display:block; margin-top:4px; font-weight:600; color:var(--muted); font-size:12.5px; }
 </style>
 </head>
 <body class="is-loading">
@@ -662,6 +677,12 @@ document.documentElement.classList.add('auth-gate');</script>
 </div>
 
 <a class="skip-link" href="#main">Skip to content</a>
+
+<!-- added: 50% offer bar -->
+<div class="rai-offer-bar" id="raiOfferBar" role="region" aria-label="Discount offer" hidden>
+  <span>🎉 50% OFF — coupon code <span class="rai-offer-code">REHMAN50</span></span>
+  <span>offer ends in <span class="rai-offer-timer" id="raiOfferTimer">--:--:--:--</span></span>
+</div>
 
 <header class="site-header" id="siteHeader">
   <div class="header-inner">
@@ -859,6 +880,15 @@ document.documentElement.classList.add('auth-gate');</script>
               <label for="message">Project details</label>
               <textarea id="message" name="message" placeholder="Tell us what you need — style, quantity, deadline, references…" aria-describedby="err-message"></textarea>
               <p class="err" id="err-message" role="alert"></p>
+            </div>
+            <!-- added: coupon code -->
+            <div class="field full rai-offer-coupon" id="raiOfferCoupon">
+              <label for="raiOfferCode">Coupon code</label>
+              <div class="rai-offer-row">
+                <input id="raiOfferCode" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. REHMAN50" aria-describedby="raiOfferMsg">
+                <button class="btn ghost small" type="button" id="raiOfferApply">Apply</button>
+              </div>
+              <p class="rai-offer-msg" id="raiOfferMsg" role="status" aria-live="polite"></p>
             </div>
             <p class="err full" id="err-quote" role="alert"></p>
             <div class="form-actions full">
@@ -2523,6 +2553,142 @@ document.documentElement.classList.add('auth-gate');</script>
 <a class="rai-wa-btn" href="https://wa.me/923082890324" target="_blank" rel="noopener" aria-label="Chat on WhatsApp" title="Chat on WhatsApp">
   <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16.04 3C9.06 3 3.4 8.66 3.4 15.64c0 2.23.58 4.4 1.69 6.32L3.3 28.5l6.72-1.76a12.6 12.6 0 0 0 6.02 1.53h.01c6.97 0 12.64-5.66 12.64-12.64 0-3.38-1.32-6.55-3.7-8.94A12.56 12.56 0 0 0 16.04 3zm0 23.13h-.01a10.5 10.5 0 0 1-5.35-1.47l-.38-.23-3.99 1.05 1.06-3.89-.25-.4a10.47 10.47 0 0 1-1.6-5.55c0-5.8 4.72-10.51 10.53-10.51 2.81 0 5.45 1.1 7.44 3.08a10.45 10.45 0 0 1 3.08 7.44c0 5.8-4.72 10.48-10.53 10.48zm5.77-7.86c-.32-.16-1.87-.92-2.16-1.03-.29-.1-.5-.16-.71.16-.21.32-.82 1.03-1 1.24-.18.21-.37.24-.69.08-.32-.16-1.33-.49-2.54-1.57-.94-.84-1.57-1.87-1.75-2.19-.18-.32-.02-.49.14-.65.14-.14.32-.37.48-.55.16-.18.21-.32.32-.53.1-.21.05-.4-.03-.55-.08-.16-.71-1.71-.97-2.34-.26-.62-.52-.53-.71-.54h-.61c-.21 0-.55.08-.84.4-.29.32-1.1 1.08-1.1 2.62 0 1.55 1.13 3.04 1.28 3.25.16.21 2.22 3.39 5.38 4.75.75.32 1.34.52 1.8.66.75.24 1.44.21 1.98.13.6-.09 1.87-.77 2.13-1.5.26-.74.26-1.37.18-1.5-.08-.13-.29-.21-.61-.37z"/></svg>
 </a>
+<!-- added: 50% offer timer + coupon logic -->
+<script>
+(function () {
+  'use strict';
+  var DEADLINE = new Date('2026-11-03T07:00:00+05:00').getTime();
+  var CODE = 'REHMAN50';
+  var applied = false;
+  function live() { return Date.now() < DEADLINE; }
+  function $(id) { return document.getElementById(id); }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function pkr(n) {
+    var AI = window.RehmanAI;
+    return (AI && AI.formatPKR) ? AI.formatPKR(n) : 'PKR ' + n;
+  }
+
+  /* countdown bar */
+  var bar = $('raiOfferBar'), timer = $('raiOfferTimer'), tick = null;
+  function render() {
+    var left = DEADLINE - Date.now();
+    if (left <= 0) {
+      if (bar) { bar.hidden = true; }
+      if (tick) { clearInterval(tick); tick = null; }
+      if (applied) { applied = false; showMsg('This offer has ended, the coupon is no longer valid.', false); }
+      return;
+    }
+    var s = Math.floor(left / 1000);
+    var d = Math.floor(s / 86400); s -= d * 86400;
+    var h = Math.floor(s / 3600); s -= h * 3600;
+    var m = Math.floor(s / 60); s -= m * 60;
+    if (timer) { timer.textContent = pad(d) + ':' + pad(h) + ':' + pad(m) + ':' + pad(s); }
+    if (bar) { bar.hidden = false; }
+  }
+  render();
+  if (live()) { tick = setInterval(render, 1000); }
+
+  /* coupon in the quote form */
+  var input = $('raiOfferCode'), btn = $('raiOfferApply'), msg = $('raiOfferMsg');
+  var form = $('quoteForm'), recapTotal = $('recapTotal');
+  function showMsg(text, ok, extra) {
+    if (!msg) { return; }
+    msg.className = 'rai-offer-msg ' + (ok ? 'is-ok' : 'is-bad');
+    msg.textContent = text;
+    if (extra) {
+      var sp = document.createElement('span');
+      sp.className = 'rai-offer-prices';
+      sp.textContent = extra;
+      msg.appendChild(sp);
+    }
+  }
+  function currentTotal() {
+    if (!recapTotal) { return 0; }
+    var n = parseInt(String(recapTotal.textContent).replace(/[^0-9]/g, ''), 10);
+    return isNaN(n) ? 0 : n;
+  }
+  function priceLine() {
+    var t = currentTotal();
+    var rates = 'Photo PKR 50 → 25 · Video PKR 100 → 50 · Editing PKR 150 → 75 · Automation PKR 200+ → 100+';
+    return (t > 0 ? 'Your estimate: ' + pkr(t) + ' → ' + pkr(Math.round(t / 2)) + '. ' : '') + rates;
+  }
+  function apply() {
+    var v = String(input ? input.value : '').trim().toUpperCase();
+    if (!v) { applied = false; showMsg('Please enter a coupon code.', false); return; }
+    if (v !== CODE) { applied = false; showMsg('This coupon code is not valid. Please check and try again.', false); return; }
+    if (!live()) { applied = false; showMsg('Sorry, this offer has ended.', false); return; }
+    applied = true;
+    if (input) { input.value = CODE; }
+    showMsg('✅ 50% discount applied', true, priceLine());
+  }
+  if (btn) { btn.addEventListener('click', apply); }
+  if (input) {
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); apply(); }
+    });
+    input.addEventListener('input', function () {
+      if (applied && String(input.value).trim().toUpperCase() !== CODE) { applied = false; if (msg) { msg.textContent = ''; } }
+    });
+  }
+  if (recapTotal && window.MutationObserver) {
+    new MutationObserver(function () { if (applied && live()) { showMsg('✅ 50% discount applied', true, priceLine()); } })
+      .observe(recapTotal, { childList: true, characterData: true, subtree: true });
+  }
+  if (form) {
+    form.addEventListener('reset', function () { applied = false; if (msg) { msg.textContent = ''; } });
+  }
+
+  /* carry the coupon into everything the form sends (email, mailto draft, callback, database) */
+  function isOn() { return applied && live(); }
+  function couponLines(subtotal) {
+    var out = ['Coupon: ' + CODE + ' — 50% discount applied'];
+    if (typeof subtotal === 'number' && subtotal > 0) { out.push('Discounted total: ' + pkr(Math.round(subtotal / 2)) + ' (was ' + pkr(subtotal) + ')'); }
+    return out;
+  }
+  var AI = window.RehmanAI;
+  if (AI && !AI.__raiOffer) {
+    AI.__raiOffer = true;
+    var origText = AI.buildQuoteText;
+    if (typeof origText === 'function') {
+      AI.buildQuoteText = function (quote) {
+        var t = origText.apply(this, arguments);
+        if (!isOn()) { return t; }
+        return t + '\n' + couponLines(quote && quote.subtotal).join('\n');
+      };
+    }
+    var origMail = AI.buildMailto;
+    if (typeof origMail === 'function') {
+      AI.buildMailto = function (opts) {
+        var r = origMail.apply(this, arguments);
+        if (!isOn() || !r || typeof r.body !== 'string') { return r; }
+        var q = opts && opts.quote;
+        var body = r.body.replace('\n\nDetails:', '\n' + couponLines(q && q.subtotal).join('\n') + '\n\nDetails:');
+        if (body === r.body) { body = couponLines(q && q.subtotal).join('\n') + '\n\n' + r.body; }
+        var to = r.href.slice(0, r.href.indexOf('?'));
+        return { href: to + '?subject=' + encodeURIComponent(r.subject) + '&body=' + encodeURIComponent(body), subject: r.subject, body: body };
+      };
+    }
+  }
+  /* database copy: wrap the save call at submit time (the database script may load later) */
+  document.addEventListener('submit', function (e) {
+    if (!form || e.target !== form) { return; }
+    var RF = window.RehmanFirebase;
+    if (RF && typeof RF.saveQuoteRequest === 'function' && !RF.saveQuoteRequest.__raiOffer) {
+      var origSave = RF.saveQuoteRequest;
+      var wrapped = function (data) {
+        if (isOn() && data && typeof data === 'object') {
+          data.coupon = CODE;
+          data.discountPercent = 50;
+          if (typeof data.estimatedTotal === 'number') { data.discountedTotal = Math.round(data.estimatedTotal / 2); }
+        }
+        return origSave.apply(this, arguments);
+      };
+      wrapped.__raiOffer = true;
+      RF.saveQuoteRequest = wrapped;
+    }
+  }, true);
+})();
+</script>
 </body>
 </html>
 
