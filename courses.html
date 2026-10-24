@@ -36,6 +36,7 @@ main{max-width:1150px;margin:0 auto;padding:6px 18px 50px}
 .rc-tag{padding:6px 12px;border-radius:999px;border:1px solid rgba(225,193,123,.35);background:rgba(225,193,123,.1);color:var(--gold2);font-size:13.5px;font-weight:600}
 .rc-grid{display:grid;grid-template-columns:1.7fr 1fr;gap:20px;margin-top:20px;align-items:start}
 @media(max-width:860px){.rc-grid{grid-template-columns:1fr}}
+.rc-grid>*{min-width:0}
 .rc-player{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:10px;box-shadow:0 30px 90px rgba(0,0,0,.45)}
 .rc-screen{position:relative;border-radius:14px;overflow:hidden;background:#000;aspect-ratio:16/9}
 .rc-screen video{width:100%;height:100%;display:block;background:#000}
@@ -45,7 +46,7 @@ main{max-width:1150px;margin:0 auto;padding:6px 18px 50px}
 .rc-locked .rc-sub{color:var(--muted);font-size:14px}
 .rc-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;flex-wrap:wrap;padding:0 4px}
 .rc-bar h3{font-size:16px}
-.rc-lang{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px}
+.rc-lang{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px;white-space:nowrap}
 .rc-lang select{background:#12131a;color:var(--text);border:1px solid rgba(225,193,123,.45);border-radius:12px;padding:10px 12px;font-size:15px;font-weight:600}
 .rc-list{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:12px}
 .rc-list h2{font-size:18px;padding:6px 8px 10px}
@@ -146,7 +147,7 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:26px 18px}
   var TITLES={1:'Introduction',2:'Prompting Basics',3:'Everyday & Business Uses',4:'Advanced Features',5:'Earning with ChatGPT + Safety'};
   var v=document.getElementById('rcVideo'), sel=document.getElementById('rcLang'), L=document.getElementById('rcLocked');
   var list=document.getElementById('rcList'), msg=document.getElementById('rcMsg');
-  var hls=null, cur=0, unlocked=false;
+  var hls=null, cur=0, loaded=0, unlocked=false;
   var burger=document.getElementById('rcBurger'), menu=document.getElementById('rcMenu');
   burger.addEventListener('click',function(){var o=menu.classList.toggle('open');burger.setAttribute('aria-expanded',o?'true':'false');});
   document.addEventListener('click',function(e){if(!menu.contains(e.target)&&!burger.contains(e.target)){menu.classList.remove('open');burger.setAttribute('aria-expanded','false');}});
@@ -168,7 +169,7 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:26px 18px}
     v.poster='courses/v'+n+'/poster.jpg';
     if(hls){hls.destroy();hls=null;}
     if(window.Hls&&Hls.isSupported()){
-      hls=new Hls({maxBufferLength:60,autoStartLoad:false});hls._go=false;
+      hls=new Hls({maxBufferLength:30,maxMaxBufferLength:120,maxBufferSize:12*1000*1000,autoStartLoad:false});hls._go=false;
       hls.on(Hls.Events.AUDIO_TRACKS_UPDATED,applyLang);
       hls.on(Hls.Events.MANIFEST_PARSED,function(){applyLang();if(autoplay){hls._go=true;hls.startLoad();v.play().catch(function(){});}});
       hls.on(Hls.Events.ERROR,function(e,d){if(d&&d.fatal){if(d.type===Hls.ErrorTypes.NETWORK_ERROR)hls.startLoad();else if(d.type===Hls.ErrorTypes.MEDIA_ERROR)hls.recoverMediaError();}});
@@ -185,11 +186,12 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:26px 18px}
   function show(n,autoplay){
     list.querySelectorAll('.rc-item').forEach(function(x){x.classList.toggle('on',x.dataset.n===String(n));});
     document.getElementById('rcNow').textContent='Video '+n+' · '+TITLES[n];
-    if(n>1&&!unlocked){v.pause();if(hls){hls.destroy();hls=null;}v.removeAttribute('src');v.load();cur=n;
+    cur=n;
+    if(n>1&&!unlocked){v.pause();if(hls){hls.destroy();hls=null;}v.removeAttribute('src');v.load();loaded=0;
       v.poster='courses/v'+n+'/poster.jpg';
       document.getElementById('rcLockedTitle').textContent='Video '+n+' is locked';L.classList.add('show');return;}
     L.classList.remove('show');
-    if(cur!==n||(!hls&&!v.currentSrc)){cur=n;load(n,autoplay);}
+    if(loaded!==n){loaded=n;load(n,autoplay);}else if(autoplay&&v.paused){v.play().catch(function(){});}
   }
   list.querySelectorAll('.rc-item').forEach(function(it){it.addEventListener('click',function(){show(+it.dataset.n,true);if(window.innerWidth<860)v.scrollIntoView({behavior:'smooth',block:'center'});});});
 
