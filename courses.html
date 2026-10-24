@@ -169,9 +169,9 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:26px 18px}
     v.poster='courses/v'+n+'/poster.jpg';
     if(hls){hls.destroy();hls=null;}
     if(window.Hls&&Hls.isSupported()){
-      hls=new Hls({maxBufferLength:30,maxMaxBufferLength:120,maxBufferSize:12*1000*1000,autoStartLoad:false});hls._go=false;
+      hls=new Hls({maxBufferLength:20,maxMaxBufferLength:90,maxBufferSize:10*1000*1000});
       hls.on(Hls.Events.AUDIO_TRACKS_UPDATED,applyLang);
-      hls.on(Hls.Events.MANIFEST_PARSED,function(){applyLang();if(autoplay){hls._go=true;hls.startLoad();v.play().catch(function(){});}});
+      hls.on(Hls.Events.MANIFEST_PARSED,function(){applyLang();if(autoplay)v.play().catch(function(){});});
       hls.on(Hls.Events.ERROR,function(e,d){if(d&&d.fatal){if(d.type===Hls.ErrorTypes.NETWORK_ERROR)hls.startLoad();else if(d.type===Hls.ErrorTypes.MEDIA_ERROR)hls.recoverMediaError();}});
       hls.loadSource(src);hls.attachMedia(v);
     }else if(v.canPlayType('application/vnd.apple.mpegurl')){
@@ -180,7 +180,6 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:26px 18px}
     }
   }
   if(v.audioTracks&&v.audioTracks.addEventListener)v.audioTracks.addEventListener('addtrack',function(){if(!hls)applyLang();});
-  v.addEventListener('play',function(){if(hls&&!hls._go){hls._go=true;hls.startLoad();}});
   sel.addEventListener('change',function(){try{localStorage.setItem(LKEY,sel.value);}catch(e){}applyLang();});
 
   function show(n,autoplay){
