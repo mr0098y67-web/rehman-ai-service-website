@@ -96,7 +96,7 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:26px 18px}
   <div class="rc-grid">
     <div class="rc-player">
       <div class="rc-screen">
-        <video id="rcVideo" playsinline controls preload="none" poster="courses/v1/poster.jpg"></video>
+        <video id="rcVideo" playsinline controls preload="metadata" poster="courses/v1/poster.jpg"></video>
         <div class="rc-locked" id="rcLocked">
           <div style="font-size:38px">🔒</div>
           <b id="rcLockedTitle">Locked</b>
@@ -164,14 +164,15 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:26px 18px}
     if(hls){var t=hls.audioTracks||[];for(var i=0;i<t.length;i++){if(t[i].lang===lang){if(hls.audioTrack!==i)hls.audioTrack=i;return;}}}
     else if(v.audioTracks&&v.audioTracks.length){for(var j=0;j<v.audioTracks.length;j++){v.audioTracks[j].enabled=(v.audioTracks[j].language===lang);}}
   }
+  function warm(n){if(!window.fetch)return;setTimeout(function(){['ur','en','hi','bn','ta','te'].forEach(function(l){var p='courses/v'+n+'/s/'+l+'/';fetch(p+'index.m3u8').catch(function(){});fetch(p+'init.mp4').catch(function(){});});},1500);}
   function load(n,autoplay){
-    var src='courses/v'+n+'/master.m3u8';
+    var src='courses/v'+n+'/s/master.m3u8';
     v.poster='courses/v'+n+'/poster.jpg';
     if(hls){hls.destroy();hls=null;}
     if(window.Hls&&Hls.isSupported()){
-      hls=new Hls({maxBufferLength:20,maxMaxBufferLength:90,maxBufferSize:10*1000*1000});
+      hls=new Hls({maxBufferLength:45,maxMaxBufferLength:120,maxBufferSize:30*1000*1000,backBufferLength:30,startFragPrefetch:true});
       hls.on(Hls.Events.AUDIO_TRACKS_UPDATED,applyLang);
-      hls.on(Hls.Events.MANIFEST_PARSED,function(){applyLang();if(autoplay)v.play().catch(function(){});});
+      hls.on(Hls.Events.MANIFEST_PARSED,function(){applyLang();if(autoplay)v.play().catch(function(){});warm(n);});
       hls.on(Hls.Events.ERROR,function(e,d){if(d&&d.fatal){if(d.type===Hls.ErrorTypes.NETWORK_ERROR)hls.startLoad();else if(d.type===Hls.ErrorTypes.MEDIA_ERROR)hls.recoverMediaError();}});
       hls.loadSource(src);hls.attachMedia(v);
     }else if(v.canPlayType('application/vnd.apple.mpegurl')){
