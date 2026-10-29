@@ -111,7 +111,7 @@ h1,h2,h3{ line-height:1.15; margin:0 0 .4em; letter-spacing:-.015em; }
   position:fixed; inset:0; z-index:300;
   display:grid; place-items:center; text-align:center;
   background:radial-gradient(700px 500px at 50% 30%, #0d1738, #05070f 70%);
-  transition:opacity .55s ease, visibility .55s ease;
+  transition:opacity .3s ease, visibility .3s ease;
 }
 .preloader.is-hidden{ opacity:0; visibility:hidden; }
 .preloader-inner{ display:flex; flex-direction:column; align-items:center; gap:14px; padding:24px; }
@@ -763,7 +763,7 @@ html.auth-gate .rx-progress{ display:none; }
     radial-gradient(520px 420px at 50% 42%, rgba(91,63,190,.30), transparent 70%),
     radial-gradient(420px 320px at 50% 60%, rgba(34,211,238,.14), transparent 70%),
     #04050a !important;
-  transition:opacity .55s var(--rx-ease), visibility .55s, transform .7s var(--rx-ease) !important;
+  transition:opacity .3s var(--rx-ease), visibility .3s, transform .4s var(--rx-ease) !important;
 }
 .preloader.is-hidden{ opacity:0; visibility:hidden; transform:scale(1.06); }
 .preloader-inner{ position:relative; display:flex; flex-direction:column; align-items:center; gap:14px; }
@@ -2224,7 +2224,7 @@ document.documentElement.classList.add('auth-gate');</script>
   function hidePreloader() {
     if (preloaderDone || !preloader) { return; }
     preloaderDone = true;
-    var minMs = reduceMotion ? 0 : 950;
+    var minMs = reduceMotion ? 0 : 400;
     var wait = Math.max(0, minMs - (Date.now() - bootTime));
     window.setTimeout(function () {
       preloader.classList.add('is-hidden');
@@ -2237,7 +2237,7 @@ document.documentElement.classList.add('auth-gate');</script>
   }
   if (document.readyState === 'complete') { hidePreloader(); }
   else { window.addEventListener('load', hidePreloader); }
-  window.setTimeout(hidePreloader, reduceMotion ? 500 : 3400);
+  window.setTimeout(hidePreloader, reduceMotion ? 500 : 1800);
 
   /* ---------------- toast ---------------- */
   var toast = document.getElementById('toast');
@@ -3120,7 +3120,7 @@ document.documentElement.classList.add('auth-gate');</script>
     window.setTimeout(function () {
       var p = document.getElementById('preloader');
       if (p) { p.classList.add('is-hidden'); }
-    }, reduce ? 300 : 1500);
+    }, reduce ? 300 : 700);
 
     /* videos: pause for reduced motion, pause when tab hidden */
     var vids = document.querySelectorAll('.rx-orb video, .rx-auth-scene video, .rx-auth-mini video');
