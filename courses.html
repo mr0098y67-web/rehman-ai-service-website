@@ -101,8 +101,115 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:26px 18px}
 @keyframes raP{50%{opacity:1;transform:translateY(-3px)}}
 @media(max-width:480px){.ra-soon{gap:5px}.ra-soon>div:first-child{font-size:28px!important}.ra-soon b{font-size:17px}.ra-soon .ra-vt{font-size:13.5px}.ra-soon .rc-sub{display:none}}
 </style>
+<!-- redesign: fonts (Sora headings, Inter body, Instrument Serif accents) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=Sora:wght@500;600;700;800&display=swap">
+<style id="rx-redesign">
+/* Rehman AI Services — "Obsidian Aurora" redesign for the courses page (visual layer only). */
+@property --rx-angle{ syntax:"<angle>"; inherits:false; initial-value:0deg; }
+:root{ --bg:#04050a; --panel:rgba(255,255,255,.035); --line:rgba(148,163,255,.14); --text:#eef1fb; --muted:#a6aecb;
+  --rx-grad:linear-gradient(110deg,#22d3ee 0%,#818cf8 42%,#c084fc 70%,#f4cf7c 100%);
+  --rx-cta:linear-gradient(115deg,#5eead4 0%,#22d3ee 30%,#a78bfa 75%,#c4b5fd 100%);
+  --rx-ease:cubic-bezier(.2,.75,.2,1);
+  --rx-head:"Sora","Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --rx-body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","Noto Nastaliq Urdu","Noto Naskh Arabic",Arial,sans-serif;
+  --rx-serif:"Instrument Serif",Georgia,serif; }
+html{ background:#04050a; }
+body{ font-family:var(--rx-body); background:
+  radial-gradient(900px 560px at 88% -10%, rgba(139,92,246,.22), transparent 62%),
+  radial-gradient(760px 520px at -8% 10%, rgba(34,211,238,.14), transparent 62%),
+  linear-gradient(180deg,#04050a,#070913 50%,#04050a) !important; }
+body::before{ content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.55;
+  background-image:linear-gradient(rgba(148,163,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,255,.05) 1px,transparent 1px); background-size:52px 52px;
+  -webkit-mask-image:radial-gradient(ellipse 80% 55% at 50% 0%,#000,transparent 75%); mask-image:radial-gradient(ellipse 80% 55% at 50% 0%,#000,transparent 75%); }
+:focus-visible{ outline-color:#22d3ee !important; }
+/* loading screen */
+.rx-pre{ position:fixed; inset:0; z-index:9999; display:grid; place-items:center; pointer-events:none;
+  background:radial-gradient(460px 380px at 50% 46%, rgba(91,63,190,.32), transparent 70%), #04050a;
+  animation:rxPreOut .55s cubic-bezier(.2,.75,.2,1) 1s forwards; }
+.rx-pre .rx-pre-core{ position:relative; width:84px; height:84px; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff 0%,#7dd3fc 18%,#22d3ee 36%,#6d28d9 78%,#1e1b4b 100%);
+  box-shadow:0 0 50px 12px rgba(34,211,238,.35),0 0 90px 30px rgba(139,92,246,.25); animation:rxPulse 1.2s ease-in-out infinite; }
+.rx-pre i{ position:absolute; left:50%; top:50%; border-radius:50%; border:1px solid rgba(125,211,252,.25); transform:translate(-50%,-50%); }
+.rx-pre i:nth-child(1){ width:130px; height:130px; border-top-color:#22d3ee; animation:rxSpin 1.4s linear infinite; }
+.rx-pre i:nth-child(2){ width:176px; height:176px; border-color:rgba(167,139,250,.15); border-right-color:#a78bfa; animation:rxSpin 2.2s linear infinite reverse; }
+@keyframes rxSpin{ to{ transform:translate(-50%,-50%) rotate(360deg); } }
+@keyframes rxPulse{ 50%{ transform:scale(1.08); } }
+@keyframes rxPreOut{ to{ opacity:0; visibility:hidden; transform:scale(1.05); } }
+/* header */
+.rc-head{ position:sticky !important; top:0; z-index:30; max-width:none !important; padding:14px max(18px,calc((100% - 1150px)/2 + 18px)) !important;
+  background:rgba(5,6,12,.7); -webkit-backdrop-filter:blur(16px) saturate(140%); backdrop-filter:blur(16px) saturate(140%); border-bottom:1px solid rgba(148,163,255,.10); }
+.rc-head::after{ content:""; position:absolute; left:0; right:0; bottom:-1px; height:1px; background:linear-gradient(90deg,transparent,rgba(34,211,238,.5),rgba(167,139,250,.5),transparent); }
+.rc-menu{ right:max(18px,calc((100% - 1150px)/2 + 18px)) !important; }
+.rc-brand{ font-family:var(--rx-head); color:#fff !important; letter-spacing:-.01em; }
+.rc-logo{ background:radial-gradient(circle at 35% 30%,#e0f2fe,#22d3ee 40%,#7c3aed) !important; color:#050611 !important; box-shadow:0 0 18px rgba(34,211,238,.45); }
+.rc-burger{ border-color:rgba(148,163,255,.18) !important; background:rgba(255,255,255,.04) !important; transition:border-color .25s; }
+.rc-burger:hover{ border-color:rgba(34,211,238,.55) !important; }
+.rc-menu{ background:rgba(8,10,20,.96) !important; -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px); border-color:rgba(148,163,255,.16) !important; }
+.rc-menu.open{ animation:rxDrop .3s var(--rx-ease) both; }
+@keyframes rxDrop{ from{ opacity:0; transform:translateY(-8px) scale(.98); } to{ opacity:1; transform:none; } }
+.rc-menu a{ transition:background .2s, color .2s; }
+.rc-menu a:hover{ color:#fff; background:rgba(34,211,238,.07); }
+.rc-menu a.on{ color:#a5f3fc !important; background:rgba(34,211,238,.10) !important; }
+/* hero */
+.rc-hero{ position:relative; padding-top:18px; animation:rxRise .8s var(--rx-ease) both; }
+@keyframes rxRise{ from{ opacity:0; transform:translateY(16px); } to{ opacity:1; transform:none; } }
+.rc-hero h1{ font-family:var(--rx-head) !important; font-weight:700; letter-spacing:-.04em; line-height:1.05 !important; color:#fff; }
+.rc-hero h1 span{ font-family:var(--rx-serif); font-style:italic; font-weight:400; letter-spacing:-.01em;
+  background:linear-gradient(100deg,#67e8f9 0%,#a78bfa 30%,#f0abfc 55%,#f4cf7c 78%,#67e8f9 100%) !important; background-size:220% 100% !important;
+  -webkit-background-clip:text !important; background-clip:text !important; color:transparent !important; animation:rxGradText 7s linear infinite; }
+@keyframes rxGradText{ from{ background-position:0% 50%; } to{ background-position:220% 50%; } }
+.rc-hero p{ color:#b6bfdc !important; }
+.rc-tag{ border-color:rgba(34,211,238,.28) !important; background:rgba(34,211,238,.07) !important; color:#a5f3fc !important; transition:transform .25s var(--rx-ease), border-color .25s; }
+.rc-tag:hover{ transform:translateY(-2px); border-color:rgba(34,211,238,.6) !important; }
+.ra-jump{ border-color:rgba(94,224,160,.45) !important; background:rgba(94,224,160,.10) !important; color:#5ee0a0 !important; }
+.ra-new{ background:var(--rx-cta) !important; color:#050611 !important; box-shadow:0 0 22px rgba(34,211,238,.3); }
+/* panels */
+.rc-player, .rc-list{ position:relative; background:linear-gradient(165deg,rgba(18,21,40,.72),rgba(9,10,20,.8)) !important; border:1px solid rgba(148,163,255,.14) !important;
+  box-shadow:0 30px 80px rgba(0,0,0,.55), 0 1px 0 rgba(255,255,255,.04) inset !important; border-radius:22px !important;
+  animation:rxRise .8s var(--rx-ease) .1s both; }
+.rc-list{ animation-delay:.18s; }
+.rc-player::before{ content:""; position:absolute; inset:0; border-radius:inherit; padding:1.5px; pointer-events:none; z-index:2;
+  background:conic-gradient(from var(--rx-angle), transparent 0deg, transparent 270deg, rgba(34,211,238,.95) 315deg, rgba(196,181,253,1) 340deg, transparent 360deg);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor;
+          mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation:rxBeam 6s linear infinite; }
+@keyframes rxBeam{ to{ --rx-angle:360deg; } }
+.rc-screen{ border-radius:16px !important; box-shadow:0 0 0 1px rgba(255,255,255,.05); }
+.rc-locked{ background:radial-gradient(420px 240px at 50% 0%, rgba(139,92,246,.22), transparent 70%), rgba(5,6,12,.9) !important; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); }
+.rc-bar h3, .rc-list h2{ font-family:var(--rx-head); letter-spacing:-.02em; }
+.rc-lang select{ background:rgba(10,12,24,.9) !important; border-color:rgba(34,211,238,.45) !important; color:#eef1fb !important; }
+.rc-item{ transition:background .25s, border-color .25s, transform .25s var(--rx-ease) !important; }
+.rc-item:hover{ background:rgba(255,255,255,.035); transform:translateX(3px); }
+.rc-item.on{ border-color:rgba(34,211,238,.5) !important; background:linear-gradient(90deg,rgba(34,211,238,.10),rgba(139,92,246,.08)) !important; }
+.rc-num{ background:rgba(255,255,255,.06) !important; color:#a5f3fc !important; font-family:var(--rx-head); }
+.rc-item.on .rc-num{ background:var(--rx-cta) !important; color:#050611 !important; box-shadow:0 0 16px rgba(34,211,238,.4); }
+.ra-group{ color:#a5f3fc !important; }
+.rc-buy{ position:relative; overflow:hidden; isolation:isolate; background:var(--rx-cta) !important; background-size:160% 100% !important; color:#050611 !important;
+  box-shadow:0 14px 40px rgba(34,211,238,.25), 0 0 0 1px rgba(255,255,255,.14) inset !important; transition:transform .25s var(--rx-ease), box-shadow .3s, background-position .4s !important; }
+.rc-buy::after{ content:""; position:absolute; inset:0; z-index:-1; pointer-events:none; background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.55) 48%,transparent 66%);
+  transform:translateX(-120%); animation:rxShine 4.2s ease-in-out infinite; }
+@keyframes rxShine{ 0%,62%{ transform:translateX(-120%); } 100%{ transform:translateX(120%); } }
+.rc-buy:hover{ transform:translateY(-2px); background-position:100% 0 !important; box-shadow:0 18px 46px rgba(139,92,246,.35) !important; }
+.rc-price b{ background:linear-gradient(90deg,#fde68a,#f4cf7c,#fbbf24); -webkit-background-clip:text; background-clip:text; color:transparent !important; }
+.rc-unlock{ border-color:rgba(167,139,250,.4) !important; background:rgba(139,92,246,.06) !important; }
+.rc-unlock input, .rc-coupon input{ background:rgba(255,255,255,.04) !important; border-color:rgba(148,163,255,.2) !important; transition:border-color .25s, box-shadow .25s; }
+.rc-unlock input:focus, .rc-coupon input:focus{ border-color:rgba(34,211,238,.7) !important; box-shadow:0 0 0 4px rgba(34,211,238,.14); outline:none; }
+.rc-unlock button{ border-color:rgba(167,139,250,.55) !important; background:rgba(139,92,246,.16) !important; color:#ddd6fe !important; }
+.rc-coupon{ border-color:rgba(148,163,255,.14) !important; background:rgba(255,255,255,.025) !important; }
+.ra-sec{ border-top:0 !important; position:relative; scroll-margin-top:84px !important; }
+.ra-sec::before{ content:""; position:absolute; top:0; left:5%; right:5%; height:1px; background:linear-gradient(90deg,transparent,rgba(34,211,238,.5),rgba(167,139,250,.5),transparent); }
+.ra-soon{ background:radial-gradient(500px 260px at 50% 0%,rgba(34,211,238,.16),transparent 70%),linear-gradient(160deg,#0c1020,#05060c) !important; }
+footer{ position:relative; border-top:1px solid rgba(148,163,255,.10); }
+@media (prefers-reduced-motion:reduce){
+  .rx-pre{ display:none !important; }
+  .rc-hero, .rc-player, .rc-list, .rc-hero h1 span, .rc-player::before, .rc-buy::after, .rc-menu.open{ animation:none !important; }
+}
+</style>
 </head>
 <body>
+<div class="rx-pre" aria-hidden="true"><i></i><i></i><div class="rx-pre-core"></div></div>
 <header class="rc-head">
   <a class="rc-brand" href="/"><span class="rc-logo">R</span>Rehman AI Services</a>
   <button class="rc-burger" id="rcBurger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="rcMenu"><i></i><i></i><i></i></button>
