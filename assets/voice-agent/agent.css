@@ -87,6 +87,8 @@ html.auth-gate .rai-va-btn,body.auth-locked .rai-va-btn,html.auth-gate .rai-va-o
 .rai-va-hint{min-height:18px;margin:2px 0 0;font-size:12.5px;font-weight:600;letter-spacing:.02em;color:#67e8f9}
 .rai-va-card[data-phase=thinking] .rai-va-hint{color:#c4b5fd}
 .rai-va-card[data-phase=speaking] .rai-va-hint{color:#f4cf7c}
+.rai-va-card[data-phase=paused] .rai-va-hint{color:#94a3b8}
+.rai-va-card[data-phase=paused] .rai-va-orb{opacity:.55;filter:saturate(.6)}
 .rai-va-caption{direction:auto;unicode-bidi:plaintext}
 .rai-va-lang{display:inline-flex;gap:4px;margin:0 0 12px;padding:3px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
 .rai-va-lang button{min-height:32px;padding:0 14px;border:0;border-radius:999px;background:none;color:#a6aecb;font:600 13px "Inter",sans-serif;cursor:pointer}
