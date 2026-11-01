@@ -93,3 +93,7 @@ html.auth-gate .rai-va-btn,body.auth-locked .rai-va-btn,html.auth-gate .rai-va-o
 .rai-va-lang button[aria-pressed=true]{background:rgba(34,211,238,.16);color:#eef1fb}
 .rai-va-lang button:focus-visible{outline:2px solid #22d3ee;outline-offset:2px}
 .rai-va-card[data-state=error] .rai-va-lang,.rai-va-card[data-state=error] .rai-va-hint{display:none}
+/* mic-denied screen (Urdu first, then Roman Urdu steps) */
+.rai-va-err .rai-va-ur{display:block;margin:0 0 6px;font-size:16.5px;line-height:1.7;font-weight:700;color:#fff;text-align:right}
+.rai-va-err span{display:block}
+.rai-va-card[data-err="mic"] .rai-va-err{color:#fde2e2;text-align:left}

@@ -1,6 +1,9 @@
 /* Rehman AI Services - "Ava" free AI voice agent (female voice, Urdu/English).
    No Firebase, no paid platform:
-     listen  -> the browser's speech recognition (Chrome/Edge/Android), or recorded audio sent to the backend (iPhone etc.)
+     listen  -> one microphone stream for the whole call; each turn is recorded with MediaRecorder, cut by simple
+                voice-activity detection (~1 s of silence), and transcribed by the backend (Whisper). The browser's
+                SpeechRecognition is deliberately NOT used: on Android Chrome it hands the mic to the Google app, which
+                cannot record while the page holds the mic ("...cannot record now as Chrome is recording").
      think   -> Ava's backend (free AI model; the API key stays on the server, never in this file)
      speak   -> natural female voice from the backend (Urdu: "Uzma", English: "Ava"); the browser's own voice as a fallback
    To switch back to the old Dograh widget, see the comment in index.html. */
@@ -26,7 +29,6 @@
   function fmtTime(sec) { var m = Math.floor(sec / 60), s = Math.floor(sec % 60); return m + ':' + (s < 10 ? '0' : '') + s; }
   function isUrdu(t) { return /[\u0600-\u06FF]/.test(t || ''); }
   function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
   /* ---------- UI ---------- */
   var ui = {};
@@ -81,14 +83,14 @@
   function setLang(l) {
     CFG.lang = l;
     Array.prototype.forEach.call(ui.langBtns, function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-l') === l)); });
-    if (call && call.phase === 'listening') { stopListening(call); listen(call); }
+    if (call && call.phase === 'listening') { stopListening(call); call.lastLang = null; listen(call); }
   }
   function setState(s, statusText) {
     ui.card.setAttribute('data-state', s);
     if (statusText != null) ui.status.textContent = statusText;
     var live = (s === 'live' || s === 'connecting');
     ui.start.hidden = live; ui.end.hidden = !live;
-    if (s !== 'error') { ui.err.hidden = true; ui.wa.hidden = true; }
+    if (s !== 'error') { ui.err.hidden = true; ui.wa.hidden = true; ui.card.removeAttribute('data-err'); }
     ui.start.textContent = (s === 'ended' || s === 'error') ? 'Call again' : 'Start talking';
     if (!live) ui.hint.textContent = '';
   }
@@ -97,10 +99,17 @@
     ui.hint.textContent = p === 'listening' ? (CFG.lang === 'en-US' ? 'Listening\u2026 speak now' : 'Sun rahi hoon\u2026 bolein') :
       p === 'thinking' ? 'Soch rahi hoon\u2026' : p === 'speaking' ? 'Ava bol rahi hai \u00b7 tap the orb to interrupt' : '';
   }
-  function showError(msg) {
+  function showError(msg, html) {
     setState('error', 'Not connected');
-    ui.err.textContent = msg; ui.err.hidden = false; ui.wa.hidden = false; ui.caption.textContent = '';
+    if (html) ui.err.innerHTML = html; else ui.err.textContent = msg;
+    ui.err.hidden = false; ui.wa.hidden = false; ui.caption.textContent = '';
+    ui.wa.textContent = 'WhatsApp par baat karein';
   }
+  /* Clear Urdu screen for a blocked microphone, with the WhatsApp button. */
+  var MIC_DENIED_HTML =
+    '<b class="rai-va-ur" dir="rtl" lang="ur">\u0645\u0627\u0626\u06cc\u06a9 \u06a9\u06cc \u0627\u062c\u0627\u0632\u062a \u0646\u06c1\u06cc\u06ba \u0645\u0644\u06cc\u06d4 \u0627\u06cc\u0648\u0627 \u0622\u067e \u06a9\u06cc \u0622\u0648\u0627\u0632 \u0646\u06c1\u06cc\u06ba \u0633\u0646 \u0633\u06a9\u062a\u06cc\u06d4</b>' +
+    '<span>Mic ki ijazat nahi mili. Address bar mein <b>\uD83D\uDD12 lock</b> ka nishan dabayein \u2192 <b>Permissions / Site settings</b> \u2192 <b>Microphone \u2192 Allow</b>, phir page refresh karke "Call again" dabayein. Ya neeche WhatsApp par baat karein.</span>';
+  function showMicDenied() { showError('', MIC_DENIED_HTML); ui.card.setAttribute('data-err', 'mic'); }
   function open() { ui.ov.classList.add('is-open'); document.documentElement.classList.add('rai-va-lock'); if (!call) setState('idle', 'Ready'); ui.start.focus(); }
   function close() { if (call) endCall(); ui.ov.classList.remove('is-open'); document.documentElement.classList.remove('rai-va-lock'); ui.btn.focus(); }
 
@@ -128,7 +137,8 @@
   }
   function sttUpload(blob) {
     if (!CFG.proxyUrl) return Promise.reject(new Error('not_configured'));
-    return fetch(CFG.proxyUrl.replace(/\/$/, '') + '/stt', { method: 'POST', headers: { 'Content-Type': blob.type || 'audio/webm' }, body: blob })
+    var hint = CFG.lang === 'en-US' ? 'en' : 'ur';
+    return fetch(CFG.proxyUrl.replace(/\/$/, '') + '/stt?lang=' + hint, { method: 'POST', headers: { 'Content-Type': blob.type || 'audio/webm' }, body: blob })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error((j && j.error) || ('http_' + r.status)); return { text: j.text || '', lang: j.lang || '' }; }); });
   }
 
@@ -222,16 +232,29 @@
     });
   }
 
-  /* ---------- listening ---------- */
+  /* ---------- listening (one mic stream, no SpeechRecognition) ---------- */
+  function setMic(c, on) {
+    /* The mic stays open for the call, but its tracks only carry sound while Ava is listening,
+       so her own voice is never recorded back as the visitor's words. */
+    try { c.stream && c.stream.getAudioTracks().forEach(function (t) { t.enabled = !!on; }); } catch (e) {}
+    c.micOn = !!on;
+  }
+  var HALLUCINATION = /^(thank(s| you)( so much)?( for watching)?[.!]*|you|bye[.!]*|subscribe.*|subtitles?.*|\u0633\u0628\u0633\u06a9\u0631\u0627\u0626\u0628.*|\u0634\u06a9\u0631\u06cc\u06c1 \u062f\u06cc\u06a9\u06be\u0646\u06d2.*|[.\u06d4\u060c,!?\u061f\s]*)$/i;
   function listen(c) {
     if (c.closed) return;
     setPhase(c, 'listening');
-    var p = (SR && !c.noSR && !CFG.forceRecord) ? listenSR(c) : listenRecord(c);
-    p.then(function (text) {
+    setMic(c, true);
+    listenRecord(c).then(function (text) {
       if (c.closed || c.phase !== 'listening') return;
       text = (text || '').trim();
-      if (!text) { c.silent = (c.silent || 0) + 1; if (c.silent >= 3) return endCall('Koi awaz nahi aayi, call band kar di. Dobara call kar sakte hain.'); return listen(c); }
+      if (HALLUCINATION.test(text)) text = '';
+      if (!text) {
+        c.silent = (c.silent || 0) + 1;
+        if (c.silent >= 4) return endCall('Koi awaz nahi aayi, call band kar di. Dobara call kar sakte hain.');
+        return listen(c);
+      }
       c.silent = 0;
+      setMic(c, false);
       ui.caption.textContent = '\u201C' + text.slice(-160) + '\u201D';
       if (++c.turns > CFG.maxTurns) return endCall('Call ki limit poori. Baqi baat WhatsApp par karein.');
       setPhase(c, 'thinking');
@@ -239,75 +262,85 @@
         if (c.closed) return;
         respond(c, reply, /allah hafiz|\u0627\u0644\u0644\u06c1 \u062d\u0627\u0641\u0638|khuda hafiz|\u062e\u062f\u0627 \u062d\u0627\u0641\u0638|\bbye\b|goodbye/i.test(text));
       }).catch(function (e) { fail(c, e); });
-    }).catch(function (e) {
-      if (c.closed) return;
-      if (e && e.fallback) { c.noSR = true; return listen(c); }
-      fail(c, e);
-    });
+    }).catch(function (e) { if (!c.closed) fail(c, e); });
   }
   function respond(c, reply, bye) {
+    setMic(c, false);
     setPhase(c, 'speaking');
     ui.caption.textContent = reply;
     speak(c, reply).then(function () {
       if (c.closed) return;
       if (bye) return endCall('Shukriya! Allah Hafiz.');
-      listen(c);
-    });
-  }
-  function listenSR(c) {
-    return new Promise(function (res, rej) {
-      var r = new SR(); c.rec = r;
-      r.lang = CFG.lang; c.lastLang = CFG.lang === 'en-US' ? 'en' : 'ur'; r.interimResults = true; r.continuous = false; r.maxAlternatives = 1;
-      var finalText = '', gotAny = false, audioStarted = false, settled = false;
-      var wd1 = setTimeout(function () { if (!audioStarted && !settled) { settled = true; try { r.abort(); } catch (e) {} var f = new Error('sr_silent'); f.fallback = true; rej(f); } }, 4000);
-      var wd2 = setTimeout(function () { try { r.stop(); } catch (e) {} }, 20000);
-      r.onaudiostart = function () { audioStarted = true; };
-      r.onresult = function (ev) {
-        var interim = '';
-        for (var i = ev.resultIndex; i < ev.results.length; i++) {
-          if (ev.results[i].isFinal) finalText += ev.results[i][0].transcript; else interim += ev.results[i][0].transcript;
-        }
-        gotAny = true;
-        if (interim) ui.caption.textContent = '\u201C' + (finalText + interim).slice(-160) + '\u201D';
-      };
-      r.onerror = function (ev) {
-        var er = ev.error;
-        if (er === 'no-speech' || er === 'aborted') return;
-        if (settled) return;
-        if (er === 'not-allowed') { settled = true; var e = new Error('mic_denied'); e.name = 'NotAllowedError'; return rej(e); }
-        if (er === 'service-not-allowed' || er === 'language-not-supported' || er === 'network') { settled = true; var f = new Error(er); f.fallback = true; return rej(f); }
-      };
-      r.onend = function () { clearTimeout(wd1); clearTimeout(wd2); c.rec = null; if (!settled) { settled = true; res(finalText); } };
-      try { r.start(); } catch (e) { var f2 = new Error('sr_start'); f2.fallback = true; rej(f2); }
+      return wait(c.interrupted ? 80 : 250).then(function () { if (!c.closed) listen(c); });  /* let the last echo die away */
     });
   }
   function stopListening(c) {
-    try { c.rec && c.rec.abort(); } catch (e) {}
+    try { if (c.vadTimer) { clearInterval(c.vadTimer); c.vadTimer = null; } } catch (e) {}
     try { c.recorder && c.recorder.state !== 'inactive' && (c.recorder._discard = true, c.recorder.stop()); } catch (e) {}
   }
-  /* For browsers without speech recognition: record until ~1.2 s of silence, send to the proxy (Whisper). */
+  function recType() {
+    return ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/ogg'].filter(function (t) {
+      return window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t);
+    })[0] || '';
+  }
+  /* Record one utterance from the call's mic stream: starts on voice, stops after ~1 s of silence
+     (adaptive to background noise), then the backend transcribes it. Resolves '' when nobody spoke. */
   function listenRecord(c) {
     if (!window.MediaRecorder) return Promise.reject(new Error('no_recorder'));
+    var VAD = { tick: 50, endSilence: 1000, minSpeech: 250, maxUtter: 20000, noSpeech: 9000, armQuiet: 150, armMax: 3000 };
     return new Promise(function (res, rej) {
-      var type = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm', 'audio/ogg'].filter(function (t) { return MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t); })[0];
-      var rec = new MediaRecorder(c.stream, type ? { mimeType: type } : undefined), parts = [];
-      c.recorder = rec;
-      var data = new Uint8Array(512), spoke = false, quietSince = 0, t0 = performance.now();
-      rec.ondataavailable = function (e) { if (e.data && e.data.size) parts.push(e.data); };
-      rec.onstop = function () {
-        clearInterval(iv); c.recorder = null;
-        if (rec._discard || !spoke) return res('');
-        ui.hint.textContent = 'Soch rahi hoon\u2026';
-        sttUpload(new Blob(parts, { type: rec.mimeType || type || 'audio/webm' })).then(function (o) { c.lastLang = o.lang || c.lastLang; res(o.text); }, rej);
-      };
-      var iv = setInterval(function () {
+      var type = recType(), data = new Uint8Array(1024), settled = false;
+      var t0 = performance.now(), floor = 0.006, armed = false, quietMs = 0;
+      var rec, parts, speechMs, silenceMs, inSpeech, startedAt;
+      function done(v, isErr) { if (settled) return; settled = true; clearInterval(c.vadTimer); c.vadTimer = null; (isErr ? rej : res)(v); }
+      function begin() {
+        parts = []; speechMs = 0; silenceMs = 0; inSpeech = false; startedAt = 0;
+        try { rec = new MediaRecorder(c.stream, type ? { mimeType: type } : undefined); }
+        catch (e) { try { rec = new MediaRecorder(c.stream); } catch (e2) { return done(new Error('no_recorder'), true); } }
+        c.recorder = rec;
+        rec.ondataavailable = function (e) { if (e.data && e.data.size) parts.push(e.data); };
+        rec.onstop = function () {
+          if (c.recorder === rec) c.recorder = null;
+          if (rec._discard || settled) return;
+          if (rec._restart) return begin();
+          clearInterval(c.vadTimer); c.vadTimer = null;
+          if (speechMs < VAD.minSpeech) return done('');
+          setMic(c, false);
+          ui.hint.textContent = 'Soch rahi hoon\u2026';
+          var blob = new Blob(parts, { type: (rec.mimeType || type || 'audio/webm').split(';')[0] });
+          sttUpload(blob).then(function (o) { c.lastLang = o.lang || c.lastLang; done(o.text); }, function (e) { done(e, true); });
+        };
+        rec.start(250);
+      }
+      function level() {
+        if (!c.micAn) return -1;
         c.micAn.getByteTimeDomainData(data);
-        var lvl = 0; for (var i = 0; i < data.length; i++) lvl = Math.max(lvl, Math.abs(data[i] - 128));
-        lvl /= 128; var now = performance.now();
-        if (lvl > 0.08) { spoke = true; quietSince = 0; } else if (spoke && !quietSince) quietSince = now;
-        if ((spoke && quietSince && now - quietSince > 1200) || now - t0 > 15000 || (!spoke && now - t0 > 7000)) { try { rec.stop(); } catch (e) {} }
-      }, 100);
-      rec.start(250);
+        var sum = 0; for (var i = 0; i < data.length; i++) { var v = (data[i] - 128) / 128; sum += v * v; }
+        return Math.sqrt(sum / data.length);
+      }
+      begin();
+      c.vadTimer = setInterval(function () {
+        if (c.closed || settled) { clearInterval(c.vadTimer); return; }
+        if (!rec || rec.state !== 'recording') return;
+        var now = performance.now(), rms = level();
+        if (rms < 0) {                                   /* no analyser (very old browser): fixed 6 s turn */
+          speechMs = VAD.minSpeech; if (now - t0 > 6000) rec.stop(); return;
+        }
+        var thr = Math.min(0.08, Math.max(0.015, floor * 3)), loud = rms > thr, quiet = rms < thr * 0.7;
+        if (!loud) floor += (Math.min(rms, 0.05) - floor) * 0.05;             /* learn the room's noise */
+        if (!armed) {                                   /* wait for a short quiet so Ava's echo tail isn't taken as speech */
+          quietMs = quiet ? quietMs + VAD.tick : 0;
+          if (quietMs >= VAD.armQuiet || now - t0 > VAD.armMax) armed = true; else return;
+        }
+        if (loud) { inSpeech = true; speechMs += VAD.tick; silenceMs = 0; if (!startedAt) startedAt = now; c.heard = true; }
+        else if (inSpeech && quiet) silenceMs += VAD.tick;
+        if (inSpeech && silenceMs >= VAD.endSilence) {
+          if (speechMs >= VAD.minSpeech) { rec.stop(); return; }
+          rec._restart = true; rec.stop(); return;      /* a short click or cough: start a fresh recording */
+        }
+        if (startedAt && now - startedAt > VAD.maxUtter) { rec.stop(); return; }
+        if (!startedAt && now - t0 > VAD.noSpeech) { rec._discard = true; rec.stop(); done(''); }
+      }, VAD.tick);
     });
   }
 
@@ -316,8 +349,9 @@
 
   function explain(e) {
     var name = String(e && e.name || ''), t = String(e && (e.message || e) || '').toLowerCase();
-    if (name === 'NotAllowedError' || name === 'SecurityError' || /mic_denied/.test(t)) return 'Microphone ki ijazat nahi mili. Browser mein mic allow karein, phir dobara try karein.';
-    if (name === 'NotFoundError' || name === 'NotReadableError') return 'Is device par microphone nahi mila.';
+    if (name === 'NotAllowedError' || name === 'SecurityError' || /mic_denied|permission/.test(t)) return 'MIC_DENIED';
+    if (name === 'NotFoundError' || name === 'OverconstrainedError') return 'Is device par microphone nahi mila. WhatsApp par baat karein.';
+    if (name === 'NotReadableError' || name === 'AbortError') return 'Microphone kisi aur app (call, recorder ya Google) mein chal raha hai. Use band karke dobara try karein, ya WhatsApp par baat karein.';
     if (/not_configured/.test(t)) return 'Voice agent abhi setup ho raha hai. Tab tak WhatsApp par baat karein.';
     if (/busy|slow_down|429/.test(t)) return CFG.agentName + ' abhi bohat busy hai. WhatsApp par baat karein, hum foran jawab dein ge.';
     if (/no_recorder|unsupported/.test(t)) return 'Ye browser voice call support nahi karta. Chrome use karein, ya WhatsApp par baat karein.';
@@ -326,31 +360,46 @@
   }
   function fail(c, e) {
     if (window.console) console.warn('[RaiVoiceAgent]', e);
-    var msg = explain(e); teardown(c); showError(msg);
+    var msg = explain(e); teardown(c);
+    if (msg === 'MIC_DENIED') showMicDenied(); else showError(msg);
   }
 
   function startCall() {
     if (call) return;
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
       showError('Ye browser voice call support nahi karta. Chrome ya Safari ka naya version use karein, ya WhatsApp par baat karein.');
       return;
     }
     if (!CFG.proxyUrl && !api._mock) { showError(explain(new Error('not_configured'))); return; }
     var c = call = { history: [], turns: 0, closed: false, phase: 'connecting' };
     setState('connecting', 'Connecting\u2026');
+    /* mic already blocked for this site: show the Urdu help screen straight away */
+    try {
+      if (navigator.permissions && navigator.permissions.query) navigator.permissions.query({ name: 'microphone' }).then(function (p) {
+        if (p && p.state === 'denied' && call === c && !c.stream) { var e = new Error('mic_denied'); e.name = 'NotAllowedError'; fail(c, e); }
+      }, function () {});
+    } catch (e) {}
     ui.caption.textContent = CFG.agentName + ' se connect kar rahe hain\u2026';
-    /* audio element + speech unlock must happen inside the tap */
+    /* audio element + audio context must be created inside the tap (iPhone/Android autoplay rules) */
     c.audioEl = new Audio(); c.audioEl.preload = 'auto'; c.audioEl.setAttribute('playsinline', '');
     try { c.audioEl.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA='; c.audioEl.play().catch(function () {}); } catch (e) {}
     try { if (window.speechSynthesis) speechSynthesis.speak(new SpeechSynthesisUtterance('')); } catch (e) {}
     var Ctx = window.AudioContext || window.webkitAudioContext;
-    navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }).then(function (stream) {
+    if (Ctx) {
+      try {
+        c.ctx = new Ctx(); if (c.ctx.resume) c.ctx.resume().catch(function () {});
+        c.outAn = c.ctx.createAnalyser(); c.outAn.fftSize = 1024;
+        var ms = c.ctx.createMediaElementSource(c.audioEl); ms.connect(c.outAn); c.outAn.connect(c.ctx.destination);
+      } catch (e) { c.outAn = null; }
+    }
+    navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 } }).then(function (stream) {
       if (c.closed) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
       c.stream = stream;
-      if (Ctx) {
-        c.ctx = new Ctx(); c.ctx.resume && c.ctx.resume();
-        c.micAn = c.ctx.createAnalyser(); c.micAn.fftSize = 1024; c.ctx.createMediaStreamSource(stream).connect(c.micAn);
-        try { c.outAn = c.ctx.createAnalyser(); c.outAn.fftSize = 1024; var ms = c.ctx.createMediaElementSource(c.audioEl); ms.connect(c.outAn); c.outAn.connect(c.ctx.destination); } catch (e) { c.outAn = null; }
+      setMic(c, false);                                 /* off until Ava finishes her greeting */
+      stream.getAudioTracks().forEach(function (t) { t.addEventListener('ended', function () { if (!c.closed) fail(c, new Error('mic_ended')); }); });
+      if (c.ctx) {
+        try { if (c.ctx.state !== 'running' && c.ctx.resume) c.ctx.resume().catch(function () {}); c.micAn = c.ctx.createAnalyser(); c.micAn.fftSize = 1024; c.ctx.createMediaStreamSource(stream).connect(c.micAn); }
+        catch (e) { c.micAn = null; }
       }
       c.t0 = performance.now();
       setState('live', "You're live 0:00");
@@ -413,7 +462,8 @@
     try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {}
     stopListening(c);
     try { c.audioEl && c.audioEl.pause(); } catch (e) {}
-    try { c.stream && c.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
+    try { c.stream && c.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}   /* release the mic completely */
+    c.stream = null; c.micOn = false;
     try { c.ctx && c.ctx.close(); } catch (e) {}
     ui.card.removeAttribute('data-phase');
     ui.orb.style.setProperty('--lvl', 0);
@@ -429,9 +479,13 @@
 
   var api = {
     config: CFG, chat: chat, open: open, close: close, start: startCall, end: endCall, _mock: false,
-    _state: function () { return call ? { phase: call.phase, turns: call.turns, history: call.history.length, voice: call.voiceUsed, ttsErrors: call.ttsErrors || 0, sr: !!SR && !call.noSR && !CFG.forceRecord, last: call.history.slice(-2) } : null; }
+    _state: function () { return call ? { phase: call.phase, turns: call.turns, history: call.history.length, voice: call.voiceUsed, ttsErrors: call.ttsErrors || 0, sr: false, micOn: !!call.micOn, recording: !!(call.recorder && call.recorder.state === 'recording'), last: call.history.slice(-2) } : null; }
   };
   window.RaiVoiceAgent = api;
+
+  /* phone locked, tab switched or page left: end the call so the mic is released */
+  document.addEventListener('visibilitychange', function () { if (document.hidden && call) endCall('Call band ho gayi (page band hua). Dobara call kar sakte hain.'); });
+  window.addEventListener('pagehide', function () { if (call) endCall(); });
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildUI); else buildUI();
 })();
