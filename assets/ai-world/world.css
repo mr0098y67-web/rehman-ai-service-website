@@ -1,0 +1,75 @@
+/* Rehman AI Services — AI World Simulation section. All selectors are prefixed .aiw to stay separate from the site's own styles. */
+.aiw-section{position:relative;padding:72px 0 56px;color:#eaf0ff;
+  --aiw-bg:#060814;--aiw-panel:rgba(255,255,255,.05);--aiw-border:rgba(255,255,255,.12);--aiw-muted:#9aa8c9}
+.aiw-wrap{width:min(1180px,100% - 32px);margin:0 auto}
+.aiw-head{text-align:center;max-width:760px;margin:0 auto 22px}
+.aiw-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:#a5f3fc;
+  padding:7px 13px;border:1px solid rgba(34,211,238,.35);border-radius:999px;background:rgba(34,211,238,.07)}
+.aiw-live{width:8px;height:8px;border-radius:50%;background:#22d3ee;box-shadow:0 0 0 0 rgba(34,211,238,.7);animation:aiw-pulse 1.8s infinite}
+@keyframes aiw-pulse{70%{box-shadow:0 0 0 9px rgba(34,211,238,0)}100%{box-shadow:0 0 0 0 rgba(34,211,238,0)}}
+.aiw-head h2{font-size:clamp(26px,5.4vw,44px);line-height:1.12;margin:14px 0 10px;letter-spacing:-.02em;font-weight:800}
+.aiw-grad{background:linear-gradient(90deg,#22d3ee,#8b5cf6 55%,#ff6fb5);-webkit-background-clip:text;background-clip:text;color:transparent}
+.aiw-sub{color:var(--aiw-muted);font-size:15.5px;line-height:1.6;margin:0}
+.aiw-sub b{color:#eaf0ff;font-weight:600}
+.aiw{position:relative;border-radius:24px;padding:1px;background:linear-gradient(140deg,rgba(34,211,238,.55),rgba(139,92,246,.35) 40%,rgba(255,111,181,.35) 70%,rgba(94,224,160,.45));
+  box-shadow:0 30px 80px rgba(2,6,23,.6),0 0 60px rgba(109,92,255,.18);outline:none}
+.aiw:focus-visible{box-shadow:0 0 0 3px #22d3ee,0 30px 80px rgba(2,6,23,.6)}
+.aiw-stage{position:relative;height:clamp(440px,68vh,660px);border-radius:23px 23px 0 0;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#1a1446 0%,#070a1f 55%,#05060f 100%)}
+.aiw-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
+.aiw-canvas:active{cursor:grabbing}
+.aiw-badge{position:absolute;top:12px;left:12px;display:flex;align-items:center;gap:8px;max-width:calc(100% - 24px);
+  font-size:11.5px;font-weight:600;letter-spacing:.02em;color:#dbe7ff;padding:7px 11px;border-radius:999px;
+  background:rgba(6,8,20,.62);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none}
+.aiw-dot{width:7px;height:7px;border-radius:50%;background:#5ee0a0;box-shadow:0 0 10px #5ee0a0;flex:none}
+.aiw-caption{--aiw-c:#8b5cf6;position:absolute;left:12px;right:12px;bottom:12px;max-width:440px;padding:13px 15px 14px;border-radius:16px;
+  background:linear-gradient(180deg,rgba(10,14,34,.78),rgba(6,8,20,.86));border:1px solid rgba(255,255,255,.12);border-left:3px solid var(--aiw-c);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);pointer-events:none;opacity:0}
+.aiw-ready .aiw-caption{opacity:1}
+.aiw-caption b{display:block;font-size:15.5px;color:#fff;margin-bottom:4px}
+.aiw-caption p{margin:0;font-size:13.5px;line-height:1.5;color:#c9d4ee}
+.aiw-cap-in{animation:aiw-cap .5s cubic-bezier(.2,.8,.2,1)}
+@keyframes aiw-cap{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.aiw-loader{position:absolute;inset:0;display:none;align-items:center;justify-content:center;gap:10px;color:#9aa8c9;font-size:14px}
+.aiw-loader span{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.2);border-top-color:#22d3ee;animation:aiw-spin .8s linear infinite}
+@keyframes aiw-spin{to{transform:rotate(360deg)}}
+.aiw-loading-on .aiw-loader{display:flex}
+.aiw-fallback{display:none;position:absolute;inset:0;padding:64px 16px 16px;overflow:auto}
+.aiw-nowebgl .aiw-fallback{display:block}
+.aiw-nowebgl .aiw-caption,.aiw-nowebgl .aiw-canvas,.aiw-nowebgl .aiw-zones,.aiw-nowebgl .aiw-ask,.aiw-nowebgl .aiw-fx,.aiw-nowebgl .aiw-hint{display:none}
+.aiw-nowebgl .aiw-stage{height:auto;min-height:420px}
+.aiw-fb-note{color:#9aa8c9;font-size:13.5px;margin:0 0 12px}
+.aiw-fb-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.aiw-fb-card{padding:16px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-top:3px solid var(--c)}
+.aiw-fb-card b{display:block;margin-bottom:6px}
+.aiw-fb-card span{color:#b7c3de;font-size:13.5px;line-height:1.5}
+.aiw-controls{border-radius:0 0 23px 23px;background:rgba(7,10,28,.96);padding:12px 12px 14px;display:grid;gap:10px}
+.aiw-zones{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+.aiw-zones::-webkit-scrollbar{display:none}
+.aiw-chip{flex:none;font:600 13.5px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#dbe7ff;padding:11px 14px;min-height:42px;border-radius:999px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);cursor:pointer;transition:background .2s,border-color .2s,color .2s,transform .15s}
+.aiw-chip:hover{border-color:var(--c)}
+.aiw-chip:active{transform:scale(.97)}
+.aiw-chip[aria-pressed="true"]{color:#060814;background:var(--c);border-color:var(--c);box-shadow:0 0 22px color-mix(in srgb,var(--c) 55%,transparent)}
+.aiw-chip:focus-visible,.aiw-fx button:focus-visible,.aiw-ask button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.aiw-ask{display:flex;gap:8px}
+.aiw-ask input{flex:1;min-width:0;font:500 15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#eaf0ff;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:12px 14px;min-height:46px;outline:none}
+.aiw-ask input::placeholder{color:#7b88ab}
+.aiw-ask input:focus{border-color:#22d3ee;box-shadow:0 0 0 3px rgba(34,211,238,.18)}
+.aiw-ask button{font:700 14.5px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#060814;border:0;border-radius:14px;padding:0 18px;min-height:46px;cursor:pointer;
+  background:linear-gradient(135deg,#22d3ee,#8b5cf6)}
+.aiw-fx{display:flex;gap:6px;flex-wrap:wrap}
+.aiw-fx button{font:600 12.5px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#b7c3de;padding:8px 11px;min-height:36px;border-radius:10px;cursor:pointer;
+  background:transparent;border:1px solid rgba(255,255,255,.12)}
+.aiw-fx button[aria-pressed="true"]{color:#fff;border-color:rgba(34,211,238,.6);background:rgba(34,211,238,.12)}
+.aiw-hint{margin:0;font-size:12px;color:#7b88ab}
+.aiw-note{margin:14px auto 0;text-align:center;font-size:12.5px;color:#7b88ab;max-width:720px;line-height:1.5}
+@media (min-width:860px){
+  .aiw-controls{grid-template-columns:auto 1fr;align-items:center}
+  .aiw-zones{grid-column:1 / -1}
+  .aiw-fx{justify-content:flex-end}
+  .aiw-caption{left:18px;bottom:18px}
+}
+@media (pointer:coarse){.aiw-hint{display:none}}
+@media (prefers-reduced-motion:reduce){.aiw-live,.aiw-cap-in{animation:none}}
+.aiw-section *,.aiw-section *::before,.aiw-section *::after{box-sizing:border-box}
