@@ -7,7 +7,8 @@
                 SpeechRecognition is deliberately NOT used: on Android Chrome it hands the mic to the Google app, which
                 cannot record while the page holds the mic ("...cannot record now as Chrome is recording").
      think   -> Ava's backend (free AI model; the API key stays on the server, never in this file)
-     speak   -> natural female voice from the backend (Urdu: "Uzma", English: "Ava"); the browser's own voice as a fallback
+     speak   -> natural female voice from the backend: ElevenLabs "Sarah" first; when that is unavailable (limit used up, error,
+                slow) the free Microsoft voices (Urdu: "Uzma", English: "Ava"); the browser's own voice as a last fallback
    Screen: a Screen Wake Lock keeps the phone screen on during a call (tiny muted video as a fallback); if the page is
    hidden anyway, Ava pauses and carries on when it is visible again; the call only ends after 60 s hidden or End call.
    To switch back to the old Dograh widget, see the comment in index.html. */
@@ -215,10 +216,12 @@
       c.voiceUsed = voice.name;
     });
   }
+  var lastTtsVoice = '';
   function fetchTts(s) {
     var tl = isUrdu(s) ? 'ur' : 'en';
     return fetch(CFG.proxyUrl.replace(/\/$/, '') + '/tts?tl=' + tl + '&q=' + encodeURIComponent(s)).then(function (r) {
       if (!r.ok) throw new Error('tts_' + r.status);
+      lastTtsVoice = r.headers.get('X-Ava-Voice') || '';
       return r.blob();
     });
   }
@@ -366,6 +369,7 @@
           q.add(o.i, String(o.text || '').replace(/[*_#`>]/g, ''));
         } else if (o.t === 'audio' && q) {
           if (o.i === 0 && !t.audio1) t.audio1 = performance.now();
+          c.vias = (c.vias || []).concat(o.via || '?');
           q.audio(o.i, b64Blob(o.b64, o.mime));
         } else if (o.t === 'audio_err' && q) {
           q.fail(o.i);
@@ -682,7 +686,7 @@
 
   var api = {
     config: CFG, chat: chat, open: open, close: close, start: startCall, end: endCall, _mock: false,
-    _state: function () { return call ? { phase: call.phase, turns: call.turns, history: call.history.length, voice: call.voiceUsed, ttsErrors: call.ttsErrors || 0, sr: false, micOn: !!call.micOn, recording: !!(call.recorder && call.recorder.state === 'recording'), wakeLock: !!(call.wake && call.wake !== 'pending'), noSleepVideo: !!call.nosleep, last: call.history.slice(-2) } : null; },
+    _state: function () { return call ? { phase: call.phase, turns: call.turns, history: call.history.length, voice: call.voiceUsed, vias: call.vias || [], ttsVoice: lastTtsVoice, ttsErrors: call.ttsErrors || 0, sr: false, micOn: !!call.micOn, recording: !!(call.recorder && call.recorder.state === 'recording'), wakeLock: !!(call.wake && call.wake !== 'pending'), noSleepVideo: !!call.nosleep, last: call.history.slice(-2) } : null; },
     _timings: []
   };
   window.RaiVoiceAgent = api;
