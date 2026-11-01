@@ -62,6 +62,13 @@
       ' <canvas class="rai-va-wave" width="600" height="90" aria-hidden="true"></canvas>' +
       ' <p class="rai-va-hint"></p>' +
       ' <p class="rai-va-caption" aria-live="polite">Urdu ya English, jaise chahein baat karein.</p>' +
+      ' <div class="rai-va-book" hidden role="status" aria-live="polite">' +
+      '  <button type="button" class="rai-va-book-x" aria-label="Close booking card">&times;</button>' +
+      '  <div class="rai-va-book-hd"><span class="rai-va-book-ok" aria-hidden="true">&#10003;</span><b>Appointment booked</b></div>' +
+      '  <dl class="rai-va-book-dl"><dt>Naam</dt><dd data-k="name"></dd><dt>Din</dt><dd data-k="date"></dd><dt>Waqt</dt><dd data-k="time"></dd><dt>Kaam</dt><dd data-k="req"></dd></dl>' +
+      '  <a class="rai-va-book-wa" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21c5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm5.8 14.03c-.25.69-1.44 1.32-1.98 1.4-.51.08-1.15.11-1.86-.12-.43-.14-.98-.32-1.68-.62-2.96-1.28-4.89-4.26-5.04-4.46-.15-.2-1.2-1.6-1.2-3.05s.76-2.16 1.03-2.46c.27-.3.59-.37.79-.37h.57c.18 0 .43-.07.67.51.25.59.84 2.04.91 2.19.07.15.12.32.02.52-.1.2-.15.32-.3.49-.15.17-.31.39-.45.52-.15.15-.3.31-.13.61.17.3.77 1.27 1.65 2.06 1.13 1.01 2.09 1.32 2.39 1.47.3.15.47.12.64-.07.17-.2.74-.86.94-1.16.2-.3.39-.25.67-.15.27.1 1.73.82 2.03.97.3.15.49.22.57.35.07.12.07.71-.18 1.4z"/></svg>WhatsApp par confirm karein</a>' +
+      '  <small class="rai-va-book-id"></small>' +
+      ' </div>' +
       ' <div class="rai-va-err" hidden></div>' +
       ' <div class="rai-va-lang" role="group" aria-label="Language"><button type="button" data-l="ur-PK" aria-pressed="true">\u0627\u0631\u062f\u0648</button><button type="button" data-l="en-US" aria-pressed="false">English</button></div>' +
       ' <div class="rai-va-ctrls">' +
@@ -80,8 +87,10 @@
       stage: ov.querySelector('.rai-va-stage'), orb: ov.querySelector('.rai-va-orb'), wave: ov.querySelector('.rai-va-wave'),
       hint: ov.querySelector('.rai-va-hint'), caption: ov.querySelector('.rai-va-caption'), err: ov.querySelector('.rai-va-err'),
       start: ov.querySelector('.rai-va-start'), end: ov.querySelector('.rai-va-end'), wa: ov.querySelector('.rai-va-wa'),
-      x: ov.querySelector('.rai-va-x'), langBtns: ov.querySelectorAll('.rai-va-lang button')
+      x: ov.querySelector('.rai-va-x'), langBtns: ov.querySelectorAll('.rai-va-lang button'),
+      book: ov.querySelector('.rai-va-book'), bookWa: ov.querySelector('.rai-va-book-wa')
     };
+    ov.querySelector('.rai-va-book-x').addEventListener('click', hideBooking);
     ui.start.addEventListener('click', startCall);
     ui.end.addEventListener('click', function () { endCall('Call ended. Shukriya!'); });
     ui.x.addEventListener('click', close);
@@ -92,6 +101,20 @@
     ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && ov.classList.contains('is-open')) close(); });
   }
+
+  /* Booking confirmation card: what was booked, and a WhatsApp button that sends the details to the business number. */
+  function showBooking(b) {
+    if (!b || !ui.book) return;
+    var set = function (k, v) { var d = ui.book.querySelector('[data-k="' + k + '"]'); if (d) d.textContent = v || '-'; };
+    set('name', b.name_roman || b.name);
+    set('date', b.date_label || b.date); set('time', b.time_label || b.time); set('req', b.requirement_ur && isUrdu(b.requirement_ur) && CFG.lang !== 'en-US' ? b.requirement_ur : b.requirement);
+    var wa = String(b.wa_url || '');
+    ui.bookWa.href = /^https:\/\/wa\.me\//.test(wa) ? wa : 'https://wa.me/' + CFG.whatsapp;
+    ui.book.querySelector('.rai-va-book-id').textContent = b.id ? 'Booking ID: ' + b.id : '';
+    ui.book.hidden = false; ui.card.setAttribute('data-booked', '1');
+    try { ui.book.scrollIntoView({ block: 'nearest' }); } catch (e) {}
+  }
+  function hideBooking() { if (ui.book) { ui.book.hidden = true; ui.card.removeAttribute('data-booked'); } }
 
   function setLang(l) {
     CFG.lang = l;
@@ -422,6 +445,7 @@
     fd.append('messages', JSON.stringify(c.history.slice(-11)));
     fd.append('lang', CFG.lang === 'en-US' ? 'en' : 'ur');
     fd.append('tts', cloud ? '1' : '0');
+    fd.append('booking', JSON.stringify(c.booking || null));      /* where an appointment booking stands (the backend checks everything again) */
     var q = null, heard = null, reply = '', bye = false, ended = false, nSay = 0, quickBye = false, quickQuiet = false;
     var ac = window.AbortController ? new AbortController() : null;
     t.up = performance.now();
@@ -454,6 +478,10 @@
           if (o.i === 0 && !t.audio1) t.audio1 = performance.now();
           c.vias = (c.vias || []).concat(o.via || '?');
           q.audio(o.i, b64Blob(o.b64, o.mime));
+        } else if (o.t === 'booking') {
+          c.booking = o.state || null;
+        } else if (o.t === 'booked') {
+          c.booked = o.booking; showBooking(o.booking);
         } else if (o.t === 'audio_err' && q) {
           q.fail(o.i);
         } else if (o.t === 'end') {
@@ -708,7 +736,8 @@
       return;
     }
     if (!CFG.proxyUrl && !api._mock) { showError(explain(new Error('not_configured'))); return; }
-    var c = call = { history: [], turns: 0, closed: false, phase: 'connecting' };
+    var c = call = { history: [], turns: 0, closed: false, phase: 'connecting', booking: null };
+    hideBooking();
     setState('connecting', 'Connecting\u2026');
     keepAwake(c);                                      /* keep the screen on for the whole call (phones dim and lock otherwise) */
     warmUp();
@@ -814,8 +843,8 @@
 
   var api = {
     config: CFG, chat: chat, open: open, close: close, start: startCall, end: endCall, _mock: false,
-    _state: function () { return call ? { phase: call.phase, turns: call.turns, history: call.history.length, voice: call.voiceUsed, vias: call.vias || [], ttsVoice: lastTtsVoice, ttsErrors: call.ttsErrors || 0, sr: false, micOn: !!call.micOn, recording: !!(call.recorder && call.recorder.state === 'recording'), wakeLock: !!(call.wake && call.wake !== 'pending'), noSleepVideo: !!call.nosleep, quiet: !!call.quiet, barge: !!call.bargeOn, bargeLog: call.bargeLog || [], last: call.history.slice(-2) } : null; },
-    _timings: []
+    _state: function () { return call ? { phase: call.phase, turns: call.turns, history: call.history.length, voice: call.voiceUsed, vias: call.vias || [], ttsVoice: lastTtsVoice, ttsErrors: call.ttsErrors || 0, sr: false, micOn: !!call.micOn, recording: !!(call.recorder && call.recorder.state === 'recording'), wakeLock: !!(call.wake && call.wake !== 'pending'), noSleepVideo: !!call.nosleep, quiet: !!call.quiet, booking: call.booking || null, booked: call.booked ? call.booked.id : null, barge: !!call.bargeOn, bargeLog: call.bargeLog || [], last: call.history.slice(-2) } : null; },
+    _timings: [], _showBooking: function (b) { showBooking(b); }
   };
   window.RaiVoiceAgent = api;
 
