@@ -210,7 +210,7 @@ export function mount(root, opts = {}) {
     const rings = [];
     for (let i = 0; i < 3; i++) { const r = new THREE.Mesh(new THREE.TorusGeometry(2.8 + i * .55, .035, 6, 80), new THREE.MeshBasicMaterial({ color: i % 2 ? 0x22d3ee : 0x8b5cf6, transparent: true, opacity: .85 })); r.position.y = 3.6; g.add(r); rings.push(r); }
     const halo = glow(0x6d5cff, 9, .55); halo.position.y = 3.6; g.add(halo);
-    const lab = labelSprite('Rehman AI Services', '#8b5cf6', 1.15); lab.position.set(0, 7.0, 0); g.add(lab);
+    const lab = labelSprite('Rehman AI Services', '#8b5cf6', mobile ? 1.7 : 1.35); lab.position.set(0, 7.4, 0); g.add(lab);
     const hit = new THREE.Mesh(new THREE.SphereGeometry(3.2, 8, 6), new THREE.MeshBasicMaterial({ visible: false })); hit.position.y = 3; hit.userData.zone = 'hub'; g.add(hit); pickables.push(hit);
     updaters.push((t) => {
       core.rotation.y = t * .5; core.rotation.x = t * .3; wire.rotation.y = -t * .25; wire.rotation.z = t * .15;
@@ -449,12 +449,12 @@ export function mount(root, opts = {}) {
   }
 
   /* ---------- camera rig ---------- */
-  const rig = { target: new THREE.Vector3(0, 2.5, 0), yaw: 0, pitch: mobile ? .5 : .38, dist: mobile ? 36 : 28 };
+  const rig = { target: new THREE.Vector3(0, 2.5, 0), yaw: 0, pitch: mobile ? .62 : .56, dist: mobile ? 42 : 37 };
   const goal = { target: new THREE.Vector3(0, 2.5, 0), yaw: 0, pitch: rig.pitch, dist: rig.dist };
   let active = 'hub';
   function flyTo(key, fromUser = true) {
     const z = ZONES[key]; if (!z) return;
-    if (key === 'hub') { goal.target.set(0, 2.5, 0); goal.dist = mobile ? 36 : 28; goal.pitch = mobile ? .5 : .38; goal.yaw = rig.yaw + angDiff(rig.yaw, rig.yaw + .0001); }
+    if (key === 'hub') { goal.target.set(0, 2.5, 0); goal.dist = mobile ? 42 : 37; goal.pitch = mobile ? .62 : .56; goal.yaw = rig.yaw + angDiff(rig.yaw, rig.yaw + .0001); }
     else {
       const p = zonePos[key];
       goal.target.set(p.x * .96, mobile ? 3.6 : 3.4, p.z * .96);
@@ -516,7 +516,7 @@ export function mount(root, opts = {}) {
   canvas.addEventListener('pointermove', (e) => {
     const p = pointers.get(e.pointerId); if (!p) return;
     const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY; moved += Math.abs(dx) + Math.abs(dy);
-    if (pointers.size === 2) { const [a, b] = [...pointers.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); if (pinch0) goal.dist = clamp(dist0 * pinch0 / d, 6, 46); }
+    if (pointers.size === 2) { const [a, b] = [...pointers.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); if (pinch0) goal.dist = clamp(dist0 * pinch0 / d, 6, 50); }
     else { goal.yaw -= dx * 0.006; goal.pitch = clamp(goal.pitch + dy * 0.004, .05, 1.2); if (touring && moved > 12) stopTour(); }
   });
   const up = (e) => {
@@ -525,7 +525,7 @@ export function mount(root, opts = {}) {
     if (wasTap) pick(e);
   };
   canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', (e) => { pointers.delete(e.pointerId); pinch0 = 0; });
-  canvas.addEventListener('wheel', (e) => { if (!standalone && !e.ctrlKey && !root.matches(':hover')) return; e.preventDefault(); goal.dist = clamp(goal.dist * (1 + Math.sign(e.deltaY) * .08), 6, 46); idleT = 0; }, { passive: false });
+  canvas.addEventListener('wheel', (e) => { if (!standalone && !e.ctrlKey && !root.matches(':hover')) return; e.preventDefault(); goal.dist = clamp(goal.dist * (1 + Math.sign(e.deltaY) * .08), 6, 50); idleT = 0; }, { passive: false });
   const ray = new THREE.Raycaster(); const ndc = new THREE.Vector2();
   function pick(e) {
     const r = canvas.getBoundingClientRect(); ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
