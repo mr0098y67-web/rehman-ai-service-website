@@ -9,6 +9,10 @@
      think   -> Ava's backend (free AI model; the API key stays on the server, never in this file)
      speak   -> natural female voice from the backend: ElevenLabs "Sarah" first; when that is unavailable (limit used up, error,
                 slow) the free Microsoft voices (Urdu: "Uzma", English: "Ava"); the browser's own voice as a last fallback
+   End: the red "Call khatam karein / End call" button (always on screen), the X, or saying "call band karo" / "Allah Hafiz".
+   Voice commands (checked on the transcript before any AI or voice): "call band karo" / "Allah Hafiz" ends the call,
+   "chup karo" puts Ava on hold (silent, call stays open), "shuru karo" brings her back. While she speaks, the mic
+   only listens for these commands, so "chup karo" works mid-sentence while her own voice can't cut her off.
    Screen: a Screen Wake Lock keeps the phone screen on during a call (tiny muted video as a fallback); if the page is
    hidden anyway, Ava pauses and carries on when it is visible again; the call only ends after 60 s hidden or End call.
    To switch back to the old Dograh widget, see the comment in index.html. */
@@ -62,7 +66,7 @@
       ' <div class="rai-va-lang" role="group" aria-label="Language"><button type="button" data-l="ur-PK" aria-pressed="true">\u0627\u0631\u062f\u0648</button><button type="button" data-l="en-US" aria-pressed="false">English</button></div>' +
       ' <div class="rai-va-ctrls">' +
       '  <button type="button" class="rai-va-start">Start talking</button>' +
-      '  <button type="button" class="rai-va-end" hidden>End call</button>' +
+      '  <button type="button" class="rai-va-end" hidden aria-label="Call khatam karein (End call)"><span class="rai-va-end-ic"><svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.996.996 0 0 1 0-1.41C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.39.39.39 1.02 0 1.41l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg></span><span class="rai-va-end-lb">Call khatam karein <small>End call</small></span></button>' +
       ' </div>' +
       ' <a class="rai-va-wa" href="https://wa.me/' + CFG.whatsapp + '" target="_blank" rel="noopener" hidden>Chat on WhatsApp instead</a>' +
       ' <p class="rai-va-fine">Free AI voice call &middot; uses your microphone</p>' +
@@ -81,7 +85,7 @@
     ui.start.addEventListener('click', startCall);
     ui.end.addEventListener('click', function () { endCall('Call ended. Shukriya!'); });
     ui.x.addEventListener('click', close);
-    ui.stage.addEventListener('click', function () { if (call && call.phase === 'speaking') interrupt(call); });
+    ui.stage.addEventListener('click', function () { if (call && call.phase === 'speaking') interrupt(call); else if (call && call.quiet && call.phase === 'quiet') { stopListening(call); resumeTalk(call); } });
     Array.prototype.forEach.call(ui.langBtns, function (b) {
       b.addEventListener('click', function () { setLang(b.getAttribute('data-l')); });
     });
@@ -99,15 +103,20 @@
     if (statusText != null) ui.status.textContent = statusText;
     var live = (s === 'live' || s === 'connecting');
     ui.start.hidden = live; ui.end.hidden = !live;
+    ui.x.setAttribute('aria-label', live ? 'End call' : 'Close');
     if (s !== 'error') { ui.err.hidden = true; ui.wa.hidden = true; ui.card.removeAttribute('data-err'); }
     ui.start.textContent = (s === 'ended' || s === 'error') ? 'Call again' : 'Start talking';
     if (!live) ui.hint.textContent = '';
   }
   function setPhase(c, p) {
+    var was = c.phase;
     c.phase = p; ui.card.setAttribute('data-phase', p);
+    if (p !== 'speaking') stopBarge(c);
+    else if (was !== 'speaking') { c.bargeChecks = 0; startBarge(c); }
     ui.hint.textContent = p === 'listening' ? (CFG.lang === 'en-US' ? 'Listening\u2026 speak now' : 'Sun rahi hoon\u2026 bolein') :
       p === 'thinking' ? 'Soch rahi hoon\u2026' : p === 'speaking' ? 'Ava bol rahi hai \u00b7 tap the orb to interrupt' :
-      p === 'paused' ? 'Call hold par hai \u00b7 screen on karein, Ava phir sunegi' : '';
+      p === 'paused' ? 'Call hold par hai \u00b7 screen on karein, Ava phir sunegi' :
+      p === 'quiet' ? (CFG.lang === 'en-US' ? 'Ava is quiet \u00b7 say \u201cstart\u201d' : 'Ava chup hai \u00b7 \u2018shuru karo\u2019 bolein') : '';
   }
   function showError(msg, html) {
     setState('error', 'Not connected');
@@ -315,10 +324,35 @@
     c.micOn = !!on;
   }
   var HALLUCINATION = /^(thank(s| you)( so much)?( for watching)?[.!]*|you|bye[.!]*|subscribe.*|subtitles?.*|\u0633\u0628\u0633\u06a9\u0631\u0627\u0626\u0628.*|\u0634\u06a9\u0631\u06cc\u06c1 \u062f\u06cc\u06a9\u06be\u0646\u06d2.*|[.\u06d4\u060c,!?\u061f\s]*)$/i;
-  var BYE = /allah hafiz|\u0627\u0644\u0644\u06c1 \u062d\u0627\u0641\u0638|khuda hafiz|\u062e\u062f\u0627 \u062d\u0627\u0641\u0638|\bbye\b|goodbye/i;
+  /* Voice commands (Roman Urdu, Urdu script, Hindi script, English), matched on the transcript before any AI or voice:
+     'bye' ends the call, 'quiet' puts Ava on hold (silent, call stays open), 'resume' brings her back (only while quiet). */
+  var CMD_BYE = new RegExp(['allah\\s*ha+fi[zs]', 'khuda\\s*ha+fi[zs]', 'fi\\s*aman\\s*allah', '\\bbye\\b', 'good\\s*-?bye', '\\bhang\\s*up\\b', '\\bend\\s*(the\\s*)?call\\b',
+    '\\bcall\\s*(ko\\s*)?(band|khatam|khatm|khtm|end|cut|off|bnd)\\b', '\\b(band|khatam|khatm|end|cut)\\s*(karo|kardo|kar\\s*do|karein|kar\\s*dein|kardein|kijiye|kr\\s*do|krdo)\\s*call\\b',
+    '(\u0627\u0644\u0644\u06c1|\u0627\u0644\u0644\u0647|\u0627\u0644\u0644\u0651\u0670\u06c1|\u0627\u0644\u0644\u0651\u0647|\u062e\u062f\u0627)\\s*\u062d\u0627\u0641\u0638',
+    '\u06a9\u0627\u0644\\s*(\u06a9\u0648\\s*)?(\u0628\u0646\u062f|\u062e\u062a\u0645|\u0627\u06cc\u0646\u0688|\u06a9\u0627\u0679)',
+    '(\u0628\u0646\u062f|\u062e\u062a\u0645)\\s*\u06a9\u0631\\s*(\u062f\u0648|\u062f\u06cc\u06ba|\u062f\u06cc\u062c\u06cc\u06d2)\\s*\u06a9\u0627\u0644',
+    '\u0628\u0627\u0626\u06d2|\u0628\u0627\u0626\u06cc\\s*\u0628\u0627\u0626\u06cc|\u06af\u0688\\s*\u0628\u0627\u0626\u06d2',
+    '\u0905\u0932\u094d\u0932\u093e\u0939\\s*\u0939\u093e\u092b\u093c?\u093f\u091c\u093c?|\u0916\u0941\u0926\u093e\\s*\u0939\u093e\u092b\u093c?\u093f\u091c\u093c?|\u0915\u0949\u0932\\s*(\u092c\u0902\u0926|\u0916\u093c?\u0924\u094d\u092e)'].join('|'), 'i');
+  var CMD_QUIET = new RegExp(['\\bchu+p\\b', '\\bkha+mo+sh\\b', '\\bru+k\\s*(jao|ja|jaen|jayen|jaiye|jaein|jain)\\b', '\\bruko\\b', '\\brukiye\\b', '\\bstop\\b', '\\bshut\\s*up\\b', '\\bbe\\s*quiet\\b', '\\bquiet\\b', '\\bmute\\b',
+    '\\bhold\\s*(par|pe|on)?\\s*(karo|kar\\s*do|rakho|kardo)?\\b', '^(acha\\s*|ok\\s*|theek\\s*hai\\s*|ava\\s*)?bas\\s*(karo|kar\\s*do|kardo|kro|kr\\s*do|kar|ava)?$', '^(ok\\s*)?wait(\\s*karo|\\s*kro)?$',
+    '\u0686\u067e', '\u062e\u0627\u0645\u0648\u0634', '\u0631\u06a9\\s*\u062c\u0627', '\u0631\u06a9\u0648', '\u0631\u06a9\u06cc\u06ba', '\u0631\u06a9\u06cc\u06d2', '\u0628\u0633\\s*\u06a9\u0631', '^(\u0627\u0686\u06be\u0627\\s*|\u0628\u0633\\s*)?\u0628\u0633$', '\u0633\u0679\u0627\u067e', '\u0627\u0633\u0679\u0627\u067e', '\u06c1\u0648\u0644\u0688',
+    '\u091a\u0941\u092a', '\u0916\u093c?\u093e\u092e\u094b\u0936', '\u0930\u0941\u0915', '\u092c\u0938\\s*\u0915\u0930', '\u0938\u094d\u091f\u0949\u092a'].join('|'), 'i');
+  var CMD_RESUME = new RegExp(['\\bshu?r[ou]o?\\b', '\\bshuru\\b', '\\bshoru\\b', '\\bstart\\b', '\\bchalo\\b', '\\bchaliye\\b', '\\bbolo\\b', '\\bboliye\\b', '\\bbolein\\b', '\\bbolen\\b', '\\bdobara\\b', '\\bcontinue\\b', '\\bresume\\b', '\\bgo\\s*on\\b', '\\bcarry\\s*on\\b', '\\bunmute\\b', '\\bbaat\\s*karo\\b',
+    '\u0634\u0631\u0648\u0639', '\u0633\u0679\u0627\u0631\u0679', '\u0627\u0633\u0679\u0627\u0631\u0679', '\u0686\u0644\u0648', '\u0686\u0644\u06cc\u06ba', '\u0686\u0644\u06cc\u06d2', '\u0628\u0648\u0644\u0648', '\u0628\u0648\u0644\u06cc\u06ba', '\u0628\u0648\u0644\u06cc\u06d2', '\u062f\u0648\u0628\u0627\u0631\u06c1',
+    '\u0936\u0941\u0930\u0942', '\u092c\u094b\u0932\u094b', '\u091a\u0932\u094b', '\u0938\u094d\u091f\u093e\u0930\u094d\u091f'].join('|'), 'i');
+  function cmdOf(text, quiet) {
+    var t = String(text || '').toLowerCase().replace(/[.,!?\u061f\u06d4\u060c"'\u201c\u201d\u2019:;-]+/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!t || t.length > 48) return '';
+    if (CMD_BYE.test(t)) return 'bye';
+    if (quiet && CMD_RESUME.test(t) && !/\bstop\b|\u0633\u0679\u0627\u067e|\u0686\u067e|\bchu+p\b/.test(t)) return 'resume';
+    if (CMD_QUIET.test(t)) return 'quiet';
+    return '';
+  }
+  var BYE = CMD_BYE;
   function listen(c) {
-    if (c.closed) return;
+    if (c.closed || c.byeing) return;
     if (document.hidden) { setMic(c, false); setPhase(c, 'paused'); return; }   /* screen off: wait until it's back */
+    if (c.quiet) return listenQuiet(c);
     setPhase(c, 'listening');
     setMic(c, true);
     listenRecord(c).then(function (blob) {
@@ -328,6 +362,51 @@
       setPhase(c, 'thinking');
       return runTurn(c, blob);
     }).catch(function (e) { if (!c.closed) fail(c, e); });
+  }
+  /* Quiet / hold mode ("chup karo"): the call stays open and Ava says nothing. She only listens for
+     "shuru karo" (back to normal) or "call band karo" / "Allah Hafiz" (end); every recording is only transcribed
+     and checked for those words, never answered. Tapping the orb also brings her back. */
+  function enterQuiet(c) {
+    c.quiet = true; c.silent = 0;
+    if (c.player) interrupt(c);
+    setPhase(c, 'quiet');
+    ui.caption.textContent = CFG.lang === 'en-US' ? 'Ava is quiet. Say "start" (or tap the orb) to continue.' : 'Ava chup hai. "Shuru karo" bolein ya orb dabayein.';
+  }
+  function listenQuiet(c) {
+    setPhase(c, 'quiet');
+    setMic(c, true);
+    listenRecord(c).then(function (blob) {
+      if (c.closed || !c.quiet || c.phase !== 'quiet') return;
+      if (!blob) return listen(c);
+      return checkCmd(c, blob, true).then(function (cmd) {
+        if (c.closed || !c.quiet || c.phase !== 'quiet') return;
+        if (cmd.cmd === 'bye') return sayBye(c, cmd.text);
+        if (cmd.cmd === 'resume') return resumeTalk(c);
+        return listen(c);                                 /* anything else: stay quiet */
+      });
+    }).catch(function (e) { if (!c.closed) { if (window.console) console.warn('[RaiVoiceAgent] quiet', e); wait(800).then(function () { if (!c.closed && c.quiet) listen(c); }); } });
+  }
+  function resumeTalk(c) {
+    if (c.closed || !c.quiet) return;
+    c.quiet = false; c.silent = 0;
+    var ack = CFG.lang === 'en-US' ? 'Yes, go ahead.' : '\u062c\u06cc\u060c \u0628\u062a\u0627\u0626\u06cc\u06ba\u06d4';
+    respond(c, ack, false);
+  }
+  /* Transcribe one recording and check it for a voice command only (no AI, no voice). Resolves {cmd, text}. */
+  function checkCmd(c, blob, quiet) {
+    var fd = new FormData();
+    fd.append('audio', blob, 'speech.' + (/mp4|m4a|aac/.test(blob.type) ? 'm4a' : /ogg/.test(blob.type) ? 'ogg' : 'webm'));
+    fd.append('messages', '[]'); fd.append('lang', CFG.lang === 'en-US' ? 'en' : 'ur');
+    fd.append('tts', '0'); fd.append('mode', 'cmd'); fd.append('quiet', quiet ? '1' : '0');
+    var out = { cmd: '', text: '' };
+    return fetch(CFG.proxyUrl.replace(/\/$/, '') + '/turn?m=cmd', { method: 'POST', body: fd }).then(function (r) {
+      if (!r.ok) return out;
+      return readLines(r, function (o) {
+        if (o.t !== 'heard') return;
+        var text = String(o.text || '').trim(); if (HALLUCINATION.test(text)) text = '';
+        out.text = text; out.cmd = text ? (o.cmd != null ? o.cmd : cmdOf(text, quiet)) : '';
+      }).then(function () { return out; });
+    }, function () { return out; });
   }
   function heardNothing(c) {
     c.silent = (c.silent || 0) + 1;
@@ -343,9 +422,10 @@
     fd.append('messages', JSON.stringify(c.history.slice(-11)));
     fd.append('lang', CFG.lang === 'en-US' ? 'en' : 'ur');
     fd.append('tts', cloud ? '1' : '0');
-    var q = null, heard = null, reply = '', bye = false, ended = false, nSay = 0;
+    var q = null, heard = null, reply = '', bye = false, ended = false, nSay = 0, quickBye = false, quickQuiet = false;
+    var ac = window.AbortController ? new AbortController() : null;
     t.up = performance.now();
-    return fetch(base + '/turn', { method: 'POST', body: fd }).then(function (r) {
+    return fetch(base + '/turn', { method: 'POST', body: fd, signal: ac ? ac.signal : undefined }).then(function (r) {
       if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { throw new Error((j && j.error) || ('http_' + r.status)); });
       return readLines(r, function (o) {
         if (c.closed) return;
@@ -357,6 +437,9 @@
           if (!text) return;
           c.silent = 0;
           ui.caption.textContent = '\u201C' + text.slice(-160) + '\u201D';
+          var cmd = o.cmd != null ? o.cmd : cmdOf(text, false);   /* voice command: handled here, no AI reply, no voice spent */
+          if (cmd === 'bye') { quickBye = true; try { ac && ac.abort(); } catch (e) {} return; }
+          if (cmd === 'quiet') { quickQuiet = true; try { ac && ac.abort(); } catch (e) {} return; }
           c.history.push({ role: 'user', content: text });
           bye = BYE.test(text);
           if (++c.turns > CFG.maxTurns) { endCall('Call ki limit poori. Baqi baat WhatsApp par karein.'); return; }
@@ -380,8 +463,10 @@
           throw new Error(o.error || 'turn_error');
         }
       });
-    }).then(function () {
+    }).catch(function (e) { if (!quickBye && !quickQuiet) throw e; }).then(function () {
       if (c.closed) return;
+      if (quickBye) return sayBye(c, heard);
+      if (quickQuiet) { enterQuiet(c); return listen(c); }
       if (!heard) return heardNothing(c);
       if (!q) return;
       if (!ended) {                                     /* stream broke off: speak what arrived, or say sorry */
@@ -396,6 +481,16 @@
         return wait(c.interrupted ? 80 : 250).then(function () { if (!c.closed) listen(c); });  /* let the last echo die away */
       });
     });
+  }
+  /* The visitor asked to end the call: Ava says a short goodbye, then hangs up (mic and wake lock released). */
+  function sayBye(c, heard) {
+    if (c.closed || c.byeing) return;
+    c.byeing = true; c.quiet = false; stopBarge(c); stopListening(c);
+    if (c.player) interrupt(c);
+    var txt = (CFG.lang === 'en-US' && !isUrdu(heard)) ? 'Thank you for calling. Goodbye!' : '\u0634\u06a9\u0631\u06cc\u06c1! \u0627\u0644\u0644\u06c1 \u062d\u0627\u0641\u0638\u06d4';
+    c.history.push({ role: 'assistant', content: txt });
+    setMic(c, false); setPhase(c, 'speaking'); ui.caption.textContent = txt;
+    return speak(c, txt).then(function () { if (!c.closed) endCall('Shukriya! Allah Hafiz.'); });
   }
   /* Read a streamed response line by line (NDJSON); falls back to reading it whole on old browsers. */
   function readLines(r, onLine) {
@@ -421,6 +516,35 @@
       return wait(c.interrupted ? 80 : 250).then(function () { if (!c.closed) listen(c); });  /* let the last echo die away */
     });
   }
+  /* While Ava speaks the mic keeps listening, but only for the voice commands: a recording made while she talks is
+     transcribed, and only "chup karo" / "call band karo" (not her own voice, not other words) stops her. */
+  function normTxt(t) { return String(t || '').toLowerCase().replace(/[.,!?\u061f\u06d4\u060c"'\u201c\u201d\u2019:;\-]+/g, ' ').replace(/\s+/g, ' ').trim(); }
+  function startBarge(c) {
+    if (c.closed || c.byeing || c.quiet || c.bargeOn || !c.stream || !window.MediaRecorder || !CFG.proxyUrl) return;
+    if ((c.bargeChecks || 0) >= 3) return;
+    c.bargeOn = true; setMic(c, true);
+    listenRecord(c, { barge: true }).then(function (blob) {
+      if (!c.bargeOn || c.closed || c.phase !== 'speaking') return;
+      c.bargeOn = false;
+      if (!blob) return;
+      c.bargeChecks = (c.bargeChecks || 0) + 1;
+      return checkCmd(c, blob, false).then(function (r) {
+        if (c.closed || c.byeing || c.quiet) return;
+        var echo = r.text && normTxt(ui.caption.textContent).indexOf(normTxt(r.text)) >= 0;   /* her own words came back */
+        if (r.cmd && !echo && (c.phase === 'speaking' || c.phase === 'listening')) {
+          (c.bargeLog = c.bargeLog || []).push(r.cmd + ':' + r.text);
+          if (r.cmd === 'bye') return sayBye(c, r.text);
+          if (r.cmd === 'quiet') { var spk = c.phase === 'speaking'; enterQuiet(c); if (!spk) { stopListening(c); listen(c); } return; }
+        }
+        if (c.phase === 'speaking') startBarge(c);
+      });
+    }).catch(function () { c.bargeOn = false; });
+  }
+  function stopBarge(c) {
+    c.bargeOn = false;
+    try { if (c.bTimer) { clearInterval(c.bTimer); c.bTimer = null; } } catch (e) {}
+    try { c.bRec && c.bRec.state !== 'inactive' && (c.bRec._discard = true, c.bRec.stop()); } catch (e) {}
+  }
   function stopListening(c) {
     try { if (c.vadTimer) { clearInterval(c.vadTimer); c.vadTimer = null; } } catch (e) {}
     try { c.recorder && c.recorder.state !== 'inactive' && (c.recorder._discard = true, c.recorder.stop()); } catch (e) {}
@@ -432,29 +556,33 @@
   }
   /* Record one utterance from the call's mic stream: starts on voice, stops after ~0.65 s of silence
      (adaptive to background noise). Resolves the recording (a Blob), or null when nobody spoke. */
-  function listenRecord(c) {
+  function listenRecord(c, o) {
+    var barge = !!(o && o.barge), RK = barge ? 'bRec' : 'recorder', TK = barge ? 'bTimer' : 'vadTimer';
     if (!window.MediaRecorder) return Promise.reject(new Error('no_recorder'));
-    var VAD = { tick: 40, endSilence: 650, minSpeech: 250, maxUtter: 20000, noSpeech: 9000, armQuiet: 150, armMax: 3000 };
+    var VAD = barge ? { tick: 40, endSilence: 550, minSpeech: 300, maxUtter: 5000, noSpeech: 1e9, armQuiet: 0, armMax: 0 }
+                    : { tick: 40, endSilence: 650, minSpeech: 250, maxUtter: 20000, noSpeech: 9000, armQuiet: 150, armMax: 3000 };
     return new Promise(function (res, rej) {
       var type = recType(), data = new Uint8Array(1024), settled = false;
       var t0 = performance.now(), floor = 0.006, armed = false, quietMs = 0;
       var rec, parts, speechMs, silenceMs, inSpeech, startedAt, lastLoud = 0, stopAt = 0;
-      function done(v, isErr) { if (settled) return; settled = true; clearInterval(c.vadTimer); c.vadTimer = null; (isErr ? rej : res)(v); }
+      function done(v, isErr) { if (settled) return; settled = true; clearInterval(c[TK]); c[TK] = null; (isErr ? rej : res)(v); }
       function begin() {
         parts = []; speechMs = 0; silenceMs = 0; inSpeech = false; startedAt = 0;
         try { rec = new MediaRecorder(c.stream, type ? { mimeType: type } : undefined); }
         catch (e) { try { rec = new MediaRecorder(c.stream); } catch (e2) { return done(new Error('no_recorder'), true); } }
-        c.recorder = rec;
+        c[RK] = rec;
         rec.ondataavailable = function (e) { if (e.data && e.data.size) parts.push(e.data); };
         rec.onstop = function () {
-          if (c.recorder === rec) c.recorder = null;
+          if (c[RK] === rec) c[RK] = null;
           if (rec._discard || settled) return;
           if (rec._restart) return begin();
-          clearInterval(c.vadTimer); c.vadTimer = null;
+          clearInterval(c[TK]); c[TK] = null;
           if (speechMs < VAD.minSpeech) return done(null);
-          setMic(c, false);
-          ui.hint.textContent = 'Soch rahi hoon\u2026';
-          c.tm = { speechEnd: lastLoud || performance.now(), stop: stopAt || performance.now() };
+          if (!barge) {
+            setMic(c, false);
+            ui.hint.textContent = 'Soch rahi hoon\u2026';
+            c.tm = { speechEnd: lastLoud || performance.now(), stop: stopAt || performance.now() };
+          }
           done(new Blob(parts, { type: (rec.mimeType || type || 'audio/webm').split(';')[0] }));
         };
         rec.start(250);
@@ -466,20 +594,20 @@
         return Math.sqrt(sum / data.length);
       }
       begin();
-      c.vadTimer = setInterval(function () {
-        if (c.closed || settled) { clearInterval(c.vadTimer); return; }
+      c[TK] = setInterval(function () {
+        if (c.closed || settled) { clearInterval(c[TK]); return; }
         if (!rec || rec.state !== 'recording') return;
         var now = performance.now(), rms = level();
         if (rms < 0) {                                   /* no analyser (very old browser): fixed 6 s turn */
           speechMs = VAD.minSpeech; if (now - t0 > 6000) { stopAt = lastLoud = now; rec.stop(); } return;
         }
-        var thr = Math.min(0.08, Math.max(0.015, floor * 3)), loud = rms > thr, quiet = rms < thr * 0.7;
+        var thr = barge ? Math.min(0.12, Math.max(0.035, floor * 4)) : Math.min(0.08, Math.max(0.015, floor * 3)), loud = rms > thr, quiet = rms < thr * 0.7;
         if (!loud) floor += (Math.min(rms, 0.05) - floor) * 0.05;             /* learn the room's noise */
         if (!armed) {                                   /* wait for a short quiet so Ava's echo tail isn't taken as speech */
           quietMs = quiet ? quietMs + VAD.tick : 0;
           if (quietMs >= VAD.armQuiet || now - t0 > VAD.armMax) armed = true; else return;
         }
-        if (loud) { inSpeech = true; speechMs += VAD.tick; silenceMs = 0; lastLoud = now; if (!startedAt) startedAt = now; c.heard = true; }
+        if (loud) { inSpeech = true; speechMs += VAD.tick; silenceMs = 0; lastLoud = now; if (!startedAt) startedAt = now; if (!barge) c.heard = true; }
         else if (inSpeech && quiet) silenceMs += VAD.tick;
         if (inSpeech && silenceMs >= VAD.endSilence) {
           if (speechMs >= VAD.minSpeech) { stopAt = now; rec.stop(); return; }
@@ -667,7 +795,7 @@
     releaseAwake(c);
     if (c.cancelSpeak) c.cancelSpeak();
     try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {}
-    stopListening(c);
+    stopListening(c); stopBarge(c);
     try { c.audioEl && c.audioEl.pause(); } catch (e) {}
     try { c.stream && c.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}   /* release the mic completely */
     c.stream = null; c.micOn = false;
@@ -686,7 +814,7 @@
 
   var api = {
     config: CFG, chat: chat, open: open, close: close, start: startCall, end: endCall, _mock: false,
-    _state: function () { return call ? { phase: call.phase, turns: call.turns, history: call.history.length, voice: call.voiceUsed, vias: call.vias || [], ttsVoice: lastTtsVoice, ttsErrors: call.ttsErrors || 0, sr: false, micOn: !!call.micOn, recording: !!(call.recorder && call.recorder.state === 'recording'), wakeLock: !!(call.wake && call.wake !== 'pending'), noSleepVideo: !!call.nosleep, last: call.history.slice(-2) } : null; },
+    _state: function () { return call ? { phase: call.phase, turns: call.turns, history: call.history.length, voice: call.voiceUsed, vias: call.vias || [], ttsVoice: lastTtsVoice, ttsErrors: call.ttsErrors || 0, sr: false, micOn: !!call.micOn, recording: !!(call.recorder && call.recorder.state === 'recording'), wakeLock: !!(call.wake && call.wake !== 'pending'), noSleepVideo: !!call.nosleep, quiet: !!call.quiet, barge: !!call.bargeOn, bargeLog: call.bargeLog || [], last: call.history.slice(-2) } : null; },
     _timings: []
   };
   window.RaiVoiceAgent = api;
@@ -700,7 +828,8 @@
       c.hideTimer = setTimeout(function () {
         if (call === c && document.hidden) endCall('Screen kaafi der band rahi, is liye call band kar di. Dobara call kar sakte hain.');
       }, CFG.hiddenGraceSeconds * 1000);
-      if (c.phase === 'listening') { stopListening(c); setMic(c, false); setPhase(c, 'paused'); }
+      if (c.phase === 'listening' || c.phase === 'quiet') { stopListening(c); setMic(c, false); setPhase(c, 'paused'); }
+      else if (c.phase === 'speaking') { stopBarge(c); setMic(c, false); }
     } else {
       clearTimeout(c.hideTimer); c.hideTimer = null;
       keepAwake(c);                                    /* the browser drops the screen lock whenever the page is hidden */
