@@ -1046,6 +1046,7 @@ h2, .section-head h2{ font-family:var(--rx-head) !important; font-weight:700 !im
   .rx-orb video, .rx-auth-scene video, .rx-auth-mini video{ display:none; }
 }
 </style>
+<link rel="stylesheet" href="assets/ai-world/world.css">
 </head>
 <body class="is-loading">
 
@@ -1171,6 +1172,60 @@ document.documentElement.classList.add('auth-gate');</script>
           </div>
         </div>
       </div>
+    </div>
+  </section>
+
+<!-- ======================= AI WORLD SIMULATION (visual demo) ======================= -->
+  <section id="ai-world" class="aiw-section" aria-labelledby="aiw-title">
+    <div class="aiw-wrap">
+      <div class="aiw-head">
+        <span class="aiw-eyebrow"><span class="aiw-live" aria-hidden="true"></span> AI World Simulation · Live 3D</span>
+        <h2 id="aiw-title">Rehman AI Services ki duniya — <span class="aiw-grad">khud ghoom kar dekhein</span></h2>
+        <p class="aiw-sub">Screen ko drag karein, kisi zone par tap karein, ya neeche likhein: <b>automation</b>, <b>editing</b>, <b>course</b>.</p>
+      </div>
+
+      <div class="aiw" data-ai-world>
+        <div class="aiw-stage">
+          <canvas class="aiw-canvas" aria-label="Interactive 3D world showing Rehman AI Services: AI Photos and Videos, Video Editing, Automation and Courses"></canvas>
+          <div class="aiw-badge"><span class="aiw-dot" aria-hidden="true"></span>Rehman AI Services — AI World Simulation (demo)</div>
+          <div class="aiw-caption" aria-live="polite">
+            <b class="aiw-cap-title">Rehman AI Services World</b>
+            <p class="aiw-cap-text">Khush aamdeed! Ye hamari services ki 3D duniya hai.</p>
+          </div>
+          <div class="aiw-loader" aria-hidden="true"><span></span>3D duniya load ho rahi hai…</div>
+          <div class="aiw-fallback">
+            <p class="aiw-fb-note">Aap ke browser mein 3D (WebGL) band hai — services ka short view:</p>
+            <div class="aiw-fb-grid">
+              <div class="aiw-fb-card" style="--c:#22d3ee"><b>AI Photos &amp; Videos</b><span>Product shots, ads aur reels ke liye professional AI visuals.</span></div>
+              <div class="aiw-fb-card" style="--c:#f6c453"><b>Video Editing</b><span>Cut, transitions, color aur sound ke saath polished video.</span></div>
+              <div class="aiw-fb-card" style="--c:#5ee0a0"><b>n8n + Make.com Automation</b><span>Roz ke repeat kaam automatic, 24/7.</span></div>
+              <div class="aiw-fb-card" style="--c:#ff6fb5"><b>AI Automation Mukammal Course</b><span>AI aur automation step by step, Urdu mein.</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="aiw-controls">
+          <div class="aiw-zones" role="toolbar" aria-label="Zones">
+            <button type="button" class="aiw-chip" data-zone="hub" style="--c:#8b5cf6" aria-pressed="true">◎ Hub</button>
+            <button type="button" class="aiw-chip" data-zone="photo" style="--c:#22d3ee" aria-pressed="false">AI Photos &amp; Videos</button>
+            <button type="button" class="aiw-chip" data-zone="edit" style="--c:#f6c453" aria-pressed="false">Video Editing</button>
+            <button type="button" class="aiw-chip" data-zone="auto" style="--c:#5ee0a0" aria-pressed="false">Automation</button>
+            <button type="button" class="aiw-chip" data-zone="course" style="--c:#ff6fb5" aria-pressed="false">Courses</button>
+          </div>
+          <form class="aiw-ask" autocomplete="off" role="search" aria-label="Ask the world">
+            <input type="text" inputmode="text" enterkeyhint="go" placeholder="Likhein: automation, editing, course, raat…" aria-label="Zone ya effect likhein">
+            <button type="submit">Chalo</button>
+          </form>
+          <div class="aiw-fx" aria-label="Effects">
+            <button type="button" data-fx="day" aria-pressed="false">☀ Din</button>
+            <button type="button" data-fx="night" aria-pressed="true">☾ Raat</button>
+            <button type="button" data-fx="rain" aria-pressed="false">☂ Barish</button>
+            <button type="button" data-fx="tour" aria-pressed="false">▶ Auto tour</button>
+          </div>
+          <p class="aiw-hint">Drag = ghoomein · Pinch / scroll = zoom · Computer par W A S D</p>
+        </div>
+      </div>
+      <p class="aiw-note">Google DeepMind ke Genie 4 jaisi real-time “world simulation” AI se inspired. Ye Rehman AI Services ka apna interactive demo hai, Google ka product nahi.</p>
     </div>
   </section>
 
@@ -3222,6 +3277,7 @@ document.documentElement.classList.add('auth-gate');</script>
   } catch (err) { /* visual layer only — never break the page */ }
 })();
 </script>
+<script src="assets/ai-world/loader.js" defer></script>
 </body>
 </html>
 
