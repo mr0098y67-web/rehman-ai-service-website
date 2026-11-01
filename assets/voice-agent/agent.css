@@ -1,0 +1,95 @@
+/* Rehman AI Services - "Ava" AI voice agent (reel-style call card). Scoped .rai-va-* */
+.rai-va-btn{position:fixed;right:18px;bottom:18px;z-index:9990;display:flex;align-items:center;gap:10px;
+  padding:9px 16px 9px 9px;border-radius:999px;border:1px solid rgba(125,211,252,.35);cursor:pointer;
+  background:linear-gradient(135deg,rgba(10,12,24,.92),rgba(20,16,40,.92));color:#eef1fb;
+  font:600 14px/1.1 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;text-align:left;
+  box-shadow:0 10px 30px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.03) inset,0 0 26px rgba(34,211,238,.18);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);transition:transform .2s,box-shadow .2s}
+.rai-va-btn:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(0,0,0,.5),0 0 34px rgba(139,92,246,.35)}
+.rai-va-btn:focus-visible{outline:2px solid #22d3ee;outline-offset:3px}
+.rai-va-btn-orb{width:34px;height:34px;border-radius:50%;flex:0 0 34px;position:relative;
+  background:radial-gradient(circle at 35% 30%,#e0f7ff 0%,#5eead4 18%,#22d3ee 38%,#8b5cf6 72%,#3b0764 100%);
+  box-shadow:0 0 18px rgba(34,211,238,.6);animation:raiVaPulse 2.4s ease-in-out infinite}
+.rai-va-btn-txt{display:flex;flex-direction:column;gap:3px}
+.rai-va-btn-txt b{font-weight:700;font-size:14px}
+.rai-va-btn-txt small{font-weight:500;font-size:11px;color:#a6aecb;letter-spacing:.02em}
+@keyframes raiVaPulse{0%,100%{transform:scale(1);box-shadow:0 0 14px rgba(34,211,238,.5)}50%{transform:scale(1.07);box-shadow:0 0 26px rgba(139,92,246,.7)}}
+
+html.rai-va-lock{overflow:hidden}
+html.rai-va-lock .rai-wa-btn,html.rai-va-lock .rai-va-btn{visibility:hidden}
+.rai-va-overlay{position:fixed;inset:0;z-index:2147483000;display:none;align-items:center;justify-content:center;padding:18px;
+  background:rgba(3,4,10,.72);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.rai-va-overlay.is-open{display:flex;animation:raiVaFade .25s ease}
+@keyframes raiVaFade{from{opacity:0}to{opacity:1}}
+.rai-va-card{position:relative;width:100%;max-width:400px;border-radius:26px;padding:22px 22px 18px;color:#eef1fb;text-align:center;
+  font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  background:radial-gradient(420px 260px at 50% 0%,rgba(139,92,246,.22),transparent 70%),
+    radial-gradient(360px 240px at 50% 100%,rgba(34,211,238,.12),transparent 70%),linear-gradient(180deg,#0b0d1c,#06070f);
+  border:1px solid rgba(148,163,255,.18);box-shadow:0 30px 80px rgba(0,0,0,.65),0 0 60px rgba(139,92,246,.15)}
+.rai-va-x{position:absolute;top:10px;right:12px;width:34px;height:34px;border-radius:50%;border:0;cursor:pointer;
+  background:rgba(255,255,255,.06);color:#a6aecb;font-size:22px;line-height:34px}
+.rai-va-x:hover{color:#fff;background:rgba(255,255,255,.12)}
+.rai-va-top{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:4px 30px 0}
+.rai-va-badge{display:inline-flex;align-items:center;gap:7px;font:700 11px/1 "Sora","Inter",sans-serif;letter-spacing:.14em;color:#c4b5fd;
+  padding:7px 10px;border-radius:999px;background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.3)}
+.rai-va-badge i{width:7px;height:7px;border-radius:50%;background:#64748b}
+.rai-va-card[data-state=live] .rai-va-badge i{background:#34d399;box-shadow:0 0 10px #34d399;animation:raiVaBlink 1.4s infinite}
+.rai-va-card[data-state=connecting] .rai-va-badge i{background:#fbbf24}
+.rai-va-card[data-state=error] .rai-va-badge i{background:#f87171}
+@keyframes raiVaBlink{50%{opacity:.35}}
+.rai-va-status{font:600 13px/1 "Inter",sans-serif;color:#eef1fb;font-variant-numeric:tabular-nums}
+.rai-va-stage{width:100%;height:190px;display:flex;align-items:center;justify-content:center;margin:6px 0 2px;padding:0;border:0;background:none;cursor:default;-webkit-tap-highlight-color:transparent}
+.rai-va-card[data-phase=speaking] .rai-va-stage{cursor:pointer}
+.rai-va-stage:focus-visible{outline:2px solid #22d3ee;outline-offset:4px;border-radius:20px}
+.rai-va-orb{--lvl:0;display:block;position:relative;width:132px;height:132px;transform:scale(calc(1 + var(--lvl)*.22));transition:transform .08s linear}
+.rai-va-orb-core,.rai-va-orb-ring{display:block}
+.rai-va-orb-core{position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(circle at 34% 28%,#ffffff 0%,#bdf4ff 10%,#22d3ee 32%,#818cf8 58%,#a21caf 82%,#1e0a3c 100%);
+  box-shadow:0 0 calc(40px + var(--lvl)*70px) rgba(34,211,238,.55),0 0 calc(80px + var(--lvl)*90px) rgba(139,92,246,.4),inset -14px -18px 40px rgba(30,10,60,.7);
+  animation:raiVaSpin 9s linear infinite}
+.rai-va-orb-ring{position:absolute;inset:-14px;border-radius:50%;border:1px solid rgba(125,211,252,.28);opacity:calc(.35 + var(--lvl));animation:raiVaRing 3s ease-out infinite}
+.rai-va-orb-ring.r2{animation-delay:1.5s}
+.rai-va-card[data-state=idle] .rai-va-orb-core,.rai-va-card[data-state=ended] .rai-va-orb-core,.rai-va-card[data-state=error] .rai-va-orb-core{filter:saturate(.75) brightness(.85)}
+.rai-va-card[data-state=connecting] .rai-va-orb{animation:raiVaBreath 1.2s ease-in-out infinite}
+@keyframes raiVaSpin{to{filter:hue-rotate(40deg)}}
+@keyframes raiVaRing{0%{transform:scale(.9);opacity:.6}100%{transform:scale(1.35);opacity:0}}
+@keyframes raiVaBreath{50%{transform:scale(.93)}}
+.rai-va-name{font:700 18px/1.2 "Sora","Inter",sans-serif;letter-spacing:-.01em}
+.rai-va-name span{font:500 13px "Inter",sans-serif;color:#a6aecb}
+.rai-va-wave{display:block;width:100%;height:56px;margin:10px 0 4px}
+.rai-va-caption{min-height:42px;margin:4px 6px 10px;font-size:14px;line-height:1.45;color:#cbd2ea}
+.rai-va-err{margin:0 0 12px;padding:10px 12px;border-radius:12px;font-size:13.5px;line-height:1.45;color:#fecaca;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.28)}
+.rai-va-ctrls{display:flex;gap:10px;justify-content:center}
+.rai-va-ctrls button{min-height:46px;padding:0 20px;border-radius:999px;border:0;cursor:pointer;font:700 14.5px "Inter",sans-serif}
+.rai-va-start{flex:1;max-width:260px;color:#04050a;background:linear-gradient(115deg,#5eead4 0%,#22d3ee 30%,#a78bfa 75%,#c4b5fd 100%);box-shadow:0 8px 24px rgba(34,211,238,.25)}
+.rai-va-end{flex:1;max-width:200px;color:#fff;background:linear-gradient(135deg,#ef4444,#b91c1c);box-shadow:0 8px 24px rgba(239,68,68,.3)}
+.rai-va-mute{color:#eef1fb;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14) !important}
+.rai-va-card.is-muted .rai-va-mute{background:rgba(251,191,36,.18);color:#fde68a}
+.rai-va-ctrls button:focus-visible,.rai-va-wa:focus-visible,.rai-va-x:focus-visible{outline:2px solid #22d3ee;outline-offset:3px}
+.rai-va-wa{display:inline-block;margin-top:12px;padding:10px 16px;border-radius:999px;font:700 14px "Inter",sans-serif;color:#fff;text-decoration:none;background:#25d366}
+.rai-va-wa[hidden],.rai-va-err[hidden],.rai-va-ctrls [hidden]{display:none !important}
+.rai-va-fine{margin:12px 0 0;font-size:11.5px;line-height:1.5;color:#7f88a8}
+.rai-va-fine a{color:#a6aecb}
+@media (max-width:480px){
+  .rai-va-btn{right:14px;bottom:14px;padding:7px 13px 7px 7px}
+  .rai-va-btn-orb{width:30px;height:30px;flex-basis:30px}
+  .rai-va-overlay{align-items:flex-end;padding:10px}
+  .rai-va-card{max-width:none;border-radius:24px 24px 20px 20px;padding:18px 16px 16px}
+  .rai-va-stage{height:160px}
+  .rai-va-orb{width:112px;height:112px}
+}
+@media (prefers-reduced-motion:reduce){.rai-va-btn-orb,.rai-va-orb-core,.rai-va-orb-ring,.rai-va-badge i{animation:none !important}}
+/* same rule as the WhatsApp button: hidden on the sign-in / create-account screen */
+html.auth-gate .rai-va-btn,body.auth-locked .rai-va-btn,html.auth-gate .rai-va-overlay,body.auth-locked .rai-va-overlay{display:none !important}
+.rai-va-card[data-state=error] .rai-va-caption,.rai-va-card[data-state=error] .rai-va-wave{display:none}
+/* reCAPTCHA badge would cover the button; attribution is shown inside the call card instead */
+.grecaptcha-badge{visibility:hidden !important}
+.rai-va-hint{min-height:18px;margin:2px 0 0;font-size:12.5px;font-weight:600;letter-spacing:.02em;color:#67e8f9}
+.rai-va-card[data-phase=thinking] .rai-va-hint{color:#c4b5fd}
+.rai-va-card[data-phase=speaking] .rai-va-hint{color:#f4cf7c}
+.rai-va-caption{direction:auto;unicode-bidi:plaintext}
+.rai-va-lang{display:inline-flex;gap:4px;margin:0 0 12px;padding:3px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
+.rai-va-lang button{min-height:32px;padding:0 14px;border:0;border-radius:999px;background:none;color:#a6aecb;font:600 13px "Inter",sans-serif;cursor:pointer}
+.rai-va-lang button[aria-pressed=true]{background:rgba(34,211,238,.16);color:#eef1fb}
+.rai-va-lang button:focus-visible{outline:2px solid #22d3ee;outline-offset:2px}
+.rai-va-card[data-state=error] .rai-va-lang,.rai-va-card[data-state=error] .rai-va-hint{display:none}
