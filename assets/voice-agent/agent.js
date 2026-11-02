@@ -107,7 +107,7 @@
     if (!b || !ui.book) return;
     var set = function (k, v) { var d = ui.book.querySelector('[data-k="' + k + '"]'); if (d) d.textContent = v || '-'; };
     set('name', b.name_roman || b.name);
-    set('date', b.date_label || b.date); set('time', b.time_label || b.time); set('req', b.requirement_ur && isUrdu(b.requirement_ur) && CFG.lang !== 'en-US' ? b.requirement_ur : b.requirement);
+    set('date', b.date_label || b.date); set('time', b.time_label || b.time); set('req', b.requirement_ur && isUrdu(b.requirement_ur) && (b.lang ? b.lang !== 'en' : CFG.lang !== 'en-US') ? b.requirement_ur : b.requirement);
     var wa = String(b.wa_url || '');
     ui.bookWa.href = /^https:\/\/wa\.me\//.test(wa) ? wa : 'https://wa.me/' + CFG.whatsapp;
     ui.book.querySelector('.rai-va-book-id').textContent = b.id ? 'Booking ID: ' + b.id : '';
@@ -118,6 +118,7 @@
 
   function setLang(l) {
     CFG.lang = l;
+    if (call) { call.lang = l === 'en-US' ? 'en' : 'ur'; call.langOther = 0; }   /* the visitor picked the language: keep it for the call */
     Array.prototype.forEach.call(ui.langBtns, function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-l') === l)); });
     if (call && call.phase === 'listening') { stopListening(call); call.lastLang = null; listen(call); }
   }
@@ -134,7 +135,11 @@
   function setPhase(c, p) {
     var was = c.phase;
     c.phase = p; ui.card.setAttribute('data-phase', p);
-    if (p !== 'speaking') stopBarge(c);
+    if (p === 'speaking' || p === 'listening' || p === 'quiet') stopTail(c);
+    if (p !== 'speaking') {
+      /* the visitor is mid-sentence as Ava finishes: keep that recording and take it as their answer */
+      if (was === 'speaking' && p === 'listening' && c.bargeOn && c.bargeSpeech && inBooking(c)) c.bargeHandoff = true; else stopBarge(c);
+    }
     else if (was !== 'speaking') { c.bargeChecks = 0; startBarge(c); }
     ui.hint.textContent = p === 'listening' ? (CFG.lang === 'en-US' ? 'Listening\u2026 speak now' : 'Sun rahi hoon\u2026 bolein') :
       p === 'thinking' ? 'Soch rahi hoon\u2026' : p === 'speaking' ? 'Ava bol rahi hai \u00b7 tap the orb to interrupt' :
@@ -346,7 +351,7 @@
     try { c.stream && c.stream.getAudioTracks().forEach(function (t) { t.enabled = !!on; }); } catch (e) {}
     c.micOn = !!on;
   }
-  var HALLUCINATION = /^(thank(s| you)( so much)?( for watching)?[.!]*|you|bye[.!]*|subscribe.*|subtitles?.*|\u0633\u0628\u0633\u06a9\u0631\u0627\u0626\u0628.*|\u0634\u06a9\u0631\u06cc\u06c1 \u062f\u06cc\u06a9\u06be\u0646\u06d2.*|[.\u06d4\u060c,!?\u061f\s]*)$/i;
+  var HALLUCINATION = /\u062a\u0631\u062c\u0645\u0629|\u0646\u0627\u0646\u0633\u064a|amara\.org|^(thank(s| you)( so much)?( for watching)?[.!]*|you|bye[.!]*|subscribe.*|subtitles?.*|\u0633\u0628\u0633\u06a9\u0631\u0627\u0626\u0628.*|\u0634\u06a9\u0631\u06cc\u06c1 \u062f\u06cc\u06a9\u06be\u0646\u06d2.*|[.\u06d4\u060c,!?\u061f\s]*)$/i;
   /* Voice commands (Roman Urdu, Urdu script, Hindi script, English), matched on the transcript before any AI or voice:
      'bye' ends the call, 'quiet' puts Ava on hold (silent, call stays open), 'resume' brings her back (only while quiet). */
   var CMD_BYE = new RegExp(['allah\\s*ha+fi[zs]', 'khuda\\s*ha+fi[zs]', 'fi\\s*aman\\s*allah', '\\bbye\\b', 'good\\s*-?bye', '\\bhang\\s*up\\b', '\\bend\\s*(the\\s*)?call\\b',
@@ -377,14 +382,15 @@
     if (document.hidden) { setMic(c, false); setPhase(c, 'paused'); return; }   /* screen off: wait until it's back */
     if (c.quiet) return listenQuiet(c);
     setPhase(c, 'listening');
-    setMic(c, true);
-    listenRecord(c).then(function (blob) {
+    if (c.bargeHandoff) return;                          /* that recording is still going: its result decides what comes next */
+    setMic(c, true); c.listenSpeech = false;
+    listenRecord(c, { endSilence: pauseMs(c), minSpeech: inBooking(c) ? 150 : 250 }).then(function (blob) {
       if (c.closed || c.phase !== 'listening') return;
       if (!blob) return heardNothing(c);
       setMic(c, false);
       setPhase(c, 'thinking');
       return runTurn(c, blob);
-    }).catch(function (e) { if (!c.closed) fail(c, e); });
+    }).catch(function (e) { if (!c.closed) softFail(c, e); });
   }
   /* Quiet / hold mode ("chup karo"): the call stays open and Ava says nothing. She only listens for
      "shuru karo" (back to normal) or "call band karo" / "Allah Hafiz" (end); every recording is only transcribed
@@ -438,25 +444,35 @@
   }
   /* One request per turn: the recording goes up, and back come (as lines of JSON, streamed) what Ava heard,
      her reply sentence by sentence, and each sentence's voice. Playback starts with the first ready sentence. */
-  function runTurn(c, blob) {
-    var base = CFG.proxyUrl.replace(/\/$/, ''), t = c.tm, cloud = !c.cloudDown;
+  function runTurn(c, blob, src) {
+    var base = CFG.proxyUrl.replace(/\/$/, ''), t = c.tm || {}, cloud = !c.cloudDown, my = c.turnSeq = (c.turnSeq || 0) + 1;
+    var ext = function (b) { return 'speech.' + (/mp4|m4a|aac/.test(b.type) ? 'm4a' : /ogg/.test(b.type) ? 'ogg' : 'webm'); };
+    var parts = [].concat(blob).filter(Boolean);                 /* one answer, in up to 4 parts when the visitor paused */
     var fd = new FormData();
-    fd.append('audio', blob, 'speech.' + (/mp4|m4a|aac/.test(blob.type) ? 'm4a' : /ogg/.test(blob.type) ? 'ogg' : 'webm'));
+    parts.forEach(function (b, i) { fd.append(i ? 'audio' + (i + 1) : 'audio', b, ext(b)); });
+    if (src) fd.append('src', src);
+    fd.append('call_lang', c.lang || ''); fd.append('lang_other', String(c.langOther || 0));   /* the call's language, kept for the whole call */
     fd.append('messages', JSON.stringify(c.history.slice(-11)));
     fd.append('lang', CFG.lang === 'en-US' ? 'en' : 'ur');
     fd.append('tts', cloud ? '1' : '0');
     fd.append('booking', JSON.stringify(c.booking || null));      /* where an appointment booking stands (the backend checks everything again) */
-    var q = null, heard = null, reply = '', bye = false, ended = false, nSay = 0, quickBye = false, quickQuiet = false;
+    var q = null, heard = null, reply = '', bye = false, ended = false, nSay = 0, quickBye = false, quickQuiet = false, merged = null, pushedUser = false;
     var ac = window.AbortController ? new AbortController() : null;
     t.up = performance.now();
+    /* still talking after the pause? cancel this request and send both parts together */
+    var tailP = (parts.length < 4 && ac) ? startTail(c, function () {
+      if (c.closed || c.turnSeq !== my || c.phase !== 'thinking' || merged) return;
+      merged = tailP; try { ac.abort(); } catch (e) {}
+    }) : null;
     return fetch(base + '/turn', { method: 'POST', body: fd, signal: ac ? ac.signal : undefined }).then(function (r) {
       if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { throw new Error((j && j.error) || ('http_' + r.status)); });
       return readLines(r, function (o) {
-        if (c.closed) return;
+        if (c.closed || c.turnSeq !== my || merged) return;
         if (o.t === 'heard') {
           t.heard = performance.now();
           var text = String(o.text || '').trim();
           if (HALLUCINATION.test(text)) text = '';
+          if (o.cmd === 'echo') text = '';                 /* Ava's own voice came back through the speaker */
           heard = text; c.lastLang = o.lang || c.lastLang;
           if (!text) return;
           c.silent = 0;
@@ -464,7 +480,7 @@
           var cmd = o.cmd != null ? o.cmd : cmdOf(text, false);   /* voice command: handled here, no AI reply, no voice spent */
           if (cmd === 'bye') { quickBye = true; try { ac && ac.abort(); } catch (e) {} return; }
           if (cmd === 'quiet') { quickQuiet = true; try { ac && ac.abort(); } catch (e) {} return; }
-          c.history.push({ role: 'user', content: text });
+          c.history.push({ role: 'user', content: text }); pushedUser = true;
           bye = BYE.test(text);
           if (++c.turns > CFG.maxTurns) { endCall('Call ki limit poori. Baqi baat WhatsApp par karein.'); return; }
           q = player(c, cloud);
@@ -478,6 +494,8 @@
           if (o.i === 0 && !t.audio1) t.audio1 = performance.now();
           c.vias = (c.vias || []).concat(o.via || '?');
           q.audio(o.i, b64Blob(o.b64, o.mime));
+        } else if (o.t === 'lang') {
+          c.lang = o.lang || c.lang; c.langOther = o.other || 0;
         } else if (o.t === 'booking') {
           c.booking = o.state || null;
         } else if (o.t === 'booked') {
@@ -485,14 +503,26 @@
         } else if (o.t === 'audio_err' && q) {
           q.fail(o.i);
         } else if (o.t === 'end') {
-          ended = true; t.server = o.ms || null;
+          ended = true; t.server = o.ms || null; c.softFails = 0;
           if (q) { c.history.push({ role: 'assistant', content: o.text || reply }); q.streamEnded = true; q.close(o.n != null ? o.n : 0); }
         } else if (o.t === 'error') {
           throw new Error(o.error || 'turn_error');
         }
       });
-    }).catch(function (e) { if (!quickBye && !quickQuiet) throw e; }).then(function () {
-      if (c.closed) return;
+    }).catch(function (e) { if (!quickBye && !quickQuiet && !merged) throw e; }).then(function () {
+      if (c.closed || c.turnSeq !== my) return;
+      if (merged) {                                     /* the visitor went on talking: one answer from both parts */
+        if (q) { try { q.stop(); } catch (e) {} }
+        if (pushedUser) { c.history.pop(); c.turns = Math.max(0, c.turns - 1); }
+        setPhase(c, 'thinking'); ui.hint.textContent = 'Sun rahi hoon\u2026';
+        return merged.then(function (b2) {
+          if (c.closed || c.turnSeq !== my) return;
+          setMic(c, false); ui.hint.textContent = 'Soch rahi hoon\u2026';
+          c.tm = { speechEnd: performance.now(), stop: performance.now() };
+          return runTurn(c, b2 ? parts.concat([b2]) : parts);
+        });
+      }
+      stopTail(c);
       if (quickBye) return sayBye(c, heard);
       if (quickQuiet) { enterQuiet(c); return listen(c); }
       if (!heard) return heardNothing(c);
@@ -504,7 +534,7 @@
         c.history.push({ role: 'assistant', content: reply });
       }
       return q.done.then(function () {
-        if (c.closed) return;
+        if (c.closed || c.turnSeq !== my) return;          /* a newer turn took over (the visitor spoke over Ava) */
         if (bye) return endCall('Shukriya! Allah Hafiz.');
         return wait(c.interrupted ? 80 : 250).then(function () { if (!c.closed) listen(c); });  /* let the last echo die away */
       });
@@ -550,23 +580,35 @@
   function startBarge(c) {
     if (c.closed || c.byeing || c.quiet || c.bargeOn || !c.stream || !window.MediaRecorder || !CFG.proxyUrl) return;
     if ((c.bargeChecks || 0) >= 3) return;
-    c.bargeOn = true; setMic(c, true);
+    c.bargeOn = true; c.bargeSpeech = false; setMic(c, true);
     listenRecord(c, { barge: true }).then(function (blob) {
-      if (!c.bargeOn || c.closed || c.phase !== 'speaking') return;
+      var handoff = c.bargeHandoff; c.bargeHandoff = false;   /* Ava finished while the visitor was still talking */
+      if (c.closed || (!handoff && (!c.bargeOn || c.phase !== 'speaking'))) return;
       c.bargeOn = false;
-      if (!blob) return;
+      if (!blob) { if (handoff) listen(c); return; }
       c.bargeChecks = (c.bargeChecks || 0) + 1;
       return checkCmd(c, blob, false).then(function (r) {
-        if (c.closed || c.byeing || c.quiet) return;
+        if (c.closed || c.byeing || c.quiet) { if (handoff && !c.closed && !c.byeing && c.quiet) listen(c); return; }
         var echo = r.text && normTxt(ui.caption.textContent).indexOf(normTxt(r.text)) >= 0;   /* her own words came back */
         if (r.cmd && !echo && (c.phase === 'speaking' || c.phase === 'listening')) {
           (c.bargeLog = c.bargeLog || []).push(r.cmd + ':' + r.text);
           if (r.cmd === 'bye') return sayBye(c, r.text);
           if (r.cmd === 'quiet') { var spk = c.phase === 'speaking'; enterQuiet(c); if (!spk) { stopListening(c); listen(c); } return; }
         }
+        /* during a booking, an answer spoken over Ava (not her own voice coming back) is taken as the answer:
+           she stops and goes on with it, so the visitor never has to say it twice. Also when she has just finished
+           and the visitor was mid-sentence (the normal listening had not caught any of it yet). */
+        var canTake = c.phase === 'speaking' || (c.phase === 'listening' && !c.listenSpeech);
+        if (!r.cmd && r.text && inBooking(c) && canTake && overlap(r.text, ui.caption.textContent) < 0.5) {
+          (c.bargeLog = c.bargeLog || []).push('answer:' + r.text);
+          stopBarge(c); stopListening(c); interrupt(c); setMic(c, false); setPhase(c, 'thinking');
+          c.tm = { speechEnd: performance.now(), stop: performance.now() };
+          return runTurn(c, [blob], 'barge').catch(function (e) { if (!c.closed) softFail(c, e); });
+        }
+        if (handoff) return listen(c);
         if (c.phase === 'speaking') startBarge(c);
       });
-    }).catch(function () { c.bargeOn = false; });
+    }).catch(function () { c.bargeOn = false; if (c.bargeHandoff) { c.bargeHandoff = false; if (!c.closed) listen(c); } });
   }
   function stopBarge(c) {
     c.bargeOn = false;
@@ -576,6 +618,28 @@
   function stopListening(c) {
     try { if (c.vadTimer) { clearInterval(c.vadTimer); c.vadTimer = null; } } catch (e) {}
     try { c.recorder && c.recorder.state !== 'inactive' && (c.recorder._discard = true, c.recorder.stop()); } catch (e) {}
+    stopTail(c);
+  }
+  /* A booking answer often has pauses ("mera naam ... Abdul Rehman", "0323 ... 664 ... 4853"), so during a booking
+     Ava waits longer before she takes the answer as finished. */
+  function inBooking(c) { return !!(c.booking && c.booking.active); }
+  function pauseMs(c) { return inBooking(c) ? (c.booking.asked === 'phone' ? 1800 : 1300) : 650; }
+  /* While Ava is thinking, the mic keeps listening: if the visitor goes on talking (they had only paused), that
+     answer is not lost. The request is cancelled and both parts are sent together as one answer. */
+  function stopTail(c) {
+    try { if (c.tTimer) { clearInterval(c.tTimer); c.tTimer = null; } } catch (e) {}
+    try { c.tRec && c.tRec.state !== 'inactive' && (c.tRec._discard = true, c.tRec.stop()); } catch (e) {}
+    c.tRec = null;
+  }
+  function startTail(c, onSpeech) {
+    if (c.closed || !c.stream || !window.MediaRecorder) return null;
+    setMic(c, true);
+    return listenRecord(c, { tail: true, endSilence: inBooking(c) ? 1300 : 900, onStart: onSpeech }).catch(function () { return null; });
+  }
+  /* how alike two texts are (share of words in a that also appear in b) */
+  function overlap(a, b) {
+    var w = normTxt(a).split(' ').filter(function (x) { return x.length > 1; }); if (!w.length) return 1;
+    var B = ' ' + normTxt(b) + ' ', hit = 0; w.forEach(function (x) { if (B.indexOf(' ' + x + ' ') >= 0) hit++; }); return hit / w.length;
   }
   function recType() {
     return ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/ogg'].filter(function (t) {
@@ -585,10 +649,12 @@
   /* Record one utterance from the call's mic stream: starts on voice, stops after ~0.65 s of silence
      (adaptive to background noise). Resolves the recording (a Blob), or null when nobody spoke. */
   function listenRecord(c, o) {
-    var barge = !!(o && o.barge), RK = barge ? 'bRec' : 'recorder', TK = barge ? 'bTimer' : 'vadTimer';
+    var tail = !!(o && o.tail), barge = !!(o && (o.barge || o.tail)), RK = tail ? 'tRec' : barge ? 'bRec' : 'recorder', TK = tail ? 'tTimer' : barge ? 'bTimer' : 'vadTimer';
+    var onStart = o && o.onStart, fired = false;
     if (!window.MediaRecorder) return Promise.reject(new Error('no_recorder'));
-    var VAD = barge ? { tick: 40, endSilence: 550, minSpeech: 300, maxUtter: 5000, noSpeech: 1e9, armQuiet: 0, armMax: 0 }
-                    : { tick: 40, endSilence: 650, minSpeech: 250, maxUtter: 20000, noSpeech: 9000, armQuiet: 150, armMax: 3000 };
+    var VAD = tail ? { tick: 40, endSilence: (o && o.endSilence) || 900, minSpeech: 300, maxUtter: 15000, noSpeech: 1e9, armQuiet: 0, armMax: 0 }
+            : barge ? { tick: 40, endSilence: 550, minSpeech: 300, maxUtter: 5000, noSpeech: 1e9, armQuiet: 0, armMax: 0 }
+                    : { tick: 40, endSilence: (o && o.endSilence) || 650, minSpeech: (o && o.minSpeech) || 250, maxUtter: 20000, noSpeech: 9000, armQuiet: 150, armMax: 3000 };
     return new Promise(function (res, rej) {
       var type = recType(), data = new Uint8Array(1024), settled = false;
       var t0 = performance.now(), floor = 0.006, armed = false, quietMs = 0;
@@ -629,13 +695,15 @@
         if (rms < 0) {                                   /* no analyser (very old browser): fixed 6 s turn */
           speechMs = VAD.minSpeech; if (now - t0 > 6000) { stopAt = lastLoud = now; rec.stop(); } return;
         }
-        var thr = barge ? Math.min(0.12, Math.max(0.035, floor * 4)) : Math.min(0.08, Math.max(0.015, floor * 3)), loud = rms > thr, quiet = rms < thr * 0.7;
+        var thr = (barge && !tail) ? Math.min(0.12, Math.max(0.035, floor * 4)) : Math.min(0.08, Math.max(0.015, floor * 3)), loud = rms > thr, quiet = rms < thr * 0.7;
         if (!loud) floor += (Math.min(rms, 0.05) - floor) * 0.05;             /* learn the room's noise */
         if (!armed) {                                   /* wait for a short quiet so Ava's echo tail isn't taken as speech */
           quietMs = quiet ? quietMs + VAD.tick : 0;
           if (quietMs >= VAD.armQuiet || now - t0 > VAD.armMax) armed = true; else return;
         }
-        if (loud) { inSpeech = true; speechMs += VAD.tick; silenceMs = 0; lastLoud = now; if (!startedAt) startedAt = now; if (!barge) c.heard = true; }
+        if (loud) { inSpeech = true; speechMs += VAD.tick; silenceMs = 0; lastLoud = now; if (!startedAt) startedAt = now; if (!barge) c.heard = true;
+          if (onStart && !fired && speechMs >= 240) { fired = true; try { onStart(); } catch (e) {} }
+          if (speechMs >= 160) { if (!barge) c.listenSpeech = true; else if (!tail) c.bargeSpeech = true; } }
         else if (inSpeech && quiet) silenceMs += VAD.tick;
         if (inSpeech && silenceMs >= VAD.endSilence) {
           if (speechMs >= VAD.minSpeech) { stopAt = now; rec.stop(); return; }
@@ -660,6 +728,17 @@
     if (/no_recorder|unsupported/.test(t)) return 'Ye browser voice call support nahi karta. Chrome use karein, ya WhatsApp par baat karein.';
     if (/failed to fetch|network|load failed/.test(t)) return 'Internet connection ka masla lag raha hai. Dobara try karein ya WhatsApp par baat karein.';
     return 'Call connect nahi ho saki. Thori dair baad dobara try karein ya WhatsApp par baat karein.';
+  }
+  /* a busy moment on the AI side should not end the call: say sorry and listen again (up to 3 times in a row) */
+  function softFail(c, e) {
+    var t = String(e && (e.message || e) || '');
+    if (c.closed || !/busy|upstream|slow_down|turn_error|http_5|failed to fetch|network|load failed/i.test(t) || (c.softFails || 0) >= 3) return fail(c, e);
+    c.softFails = (c.softFails || 0) + 1;
+    if (window.console) console.warn('[RaiVoiceAgent] soft', t);
+    var ur = !(c.lang === 'en' || (!c.lang && CFG.lang === 'en-US'));
+    var msg = ur ? '\u0645\u0639\u0630\u0631\u062a\u060c \u0627\u06cc\u06a9 \u0644\u0645\u062d\u06d2 \u06a9\u06d2 \u0644\u06cc\u06d2 \u0631\u0627\u0628\u0637\u06c1 \u06a9\u0645\u0632\u0648\u0631 \u06c1\u0648\u0627\u06d4 \u062f\u0648\u0628\u0627\u0631\u06c1 \u0628\u062a\u0627\u0626\u06cc\u06ba\u061f' : 'Sorry, I missed that for a moment. Could you say it again?';
+    c.history.push({ role: 'assistant', content: msg });
+    return wait(500 * c.softFails).then(function () { if (!c.closed) respond(c, msg, false); });
   }
   function fail(c, e) {
     if (window.console) console.warn('[RaiVoiceAgent]', e);
