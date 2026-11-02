@@ -383,6 +383,7 @@
     if (c.quiet) return listenQuiet(c);
     setPhase(c, 'listening');
     if (c.bargeHandoff) return;                          /* that recording is still going: its result decides what comes next */
+    stopListening(c);                                    /* never two listening recordings at once */
     setMic(c, true); c.listenSpeech = false;
     listenRecord(c, { endSilence: pauseMs(c), minSpeech: inBooking(c) ? 150 : 250 }).then(function (blob) {
       if (c.closed || c.phase !== 'listening') return;
@@ -536,7 +537,7 @@
       return q.done.then(function () {
         if (c.closed || c.turnSeq !== my) return;          /* a newer turn took over (the visitor spoke over Ava) */
         if (bye) return endCall('Shukriya! Allah Hafiz.');
-        return wait(c.interrupted ? 80 : 250).then(function () { if (!c.closed) listen(c); });  /* let the last echo die away */
+        return wait(c.interrupted ? 80 : 250).then(function () { if (!c.closed && c.turnSeq === my) listen(c); });  /* let the last echo die away */
       });
     });
   }
@@ -659,7 +660,8 @@
       var type = recType(), data = new Uint8Array(1024), settled = false;
       var t0 = performance.now(), floor = 0.006, armed = false, quietMs = 0;
       var rec, parts, speechMs, silenceMs, inSpeech, startedAt, lastLoud = 0, stopAt = 0;
-      function done(v, isErr) { if (settled) return; settled = true; clearInterval(c[TK]); c[TK] = null; (isErr ? rej : res)(v); }
+      var iv = null;                                     /* this recording's own timer (another recording may own c[TK] by now) */
+      function done(v, isErr) { if (settled) return; settled = true; clearInterval(iv); if (c[TK] === iv) c[TK] = null; (isErr ? rej : res)(v); }
       function begin() {
         parts = []; speechMs = 0; silenceMs = 0; inSpeech = false; startedAt = 0;
         try { rec = new MediaRecorder(c.stream, type ? { mimeType: type } : undefined); }
@@ -670,7 +672,7 @@
           if (c[RK] === rec) c[RK] = null;
           if (rec._discard || settled) return;
           if (rec._restart) return begin();
-          clearInterval(c[TK]); c[TK] = null;
+          clearInterval(iv); if (c[TK] === iv) c[TK] = null;
           if (speechMs < VAD.minSpeech) return done(null);
           if (!barge) {
             setMic(c, false);
@@ -688,8 +690,8 @@
         return Math.sqrt(sum / data.length);
       }
       begin();
-      c[TK] = setInterval(function () {
-        if (c.closed || settled) { clearInterval(c[TK]); return; }
+      iv = c[TK] = setInterval(function () {
+        if (c.closed || settled) { clearInterval(iv); return; }
         if (!rec || rec.state !== 'recording') return;
         var now = performance.now(), rms = level();
         if (rms < 0) {                                   /* no analyser (very old browser): fixed 6 s turn */
