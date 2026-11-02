@@ -385,7 +385,7 @@
     if (c.bargeHandoff) return;                          /* that recording is still going: its result decides what comes next */
     stopListening(c);                                    /* never two listening recordings at once */
     setMic(c, true); c.listenSpeech = false;
-    listenRecord(c, { endSilence: pauseMs(c), minSpeech: inBooking(c) ? 150 : 250 }).then(function (blob) {
+    listenRecord(c, { endSilence: pauseMs(c), minSpeech: inBooking(c) ? 150 : 250, maxUtter: inBooking(c) ? 15000 : 12000 }).then(function (blob) {
       if (c.closed || c.phase !== 'listening') return;
       if (!blob) return heardNothing(c);
       setMic(c, false);
@@ -461,7 +461,7 @@
     var ac = window.AbortController ? new AbortController() : null;
     t.up = performance.now();
     /* still talking after the pause? cancel this request and send both parts together */
-    var tailP = (parts.length < 4 && ac) ? startTail(c, function () {
+    var tailP = (parts.length < 4 && ac && inBooking(c)) ? startTail(c, function () {
       if (c.closed || c.turnSeq !== my || c.phase !== 'thinking' || merged) return;
       merged = tailP; try { ac.abort(); } catch (e) {}
     }) : null;
@@ -653,12 +653,13 @@
     var tail = !!(o && o.tail), barge = !!(o && (o.barge || o.tail)), RK = tail ? 'tRec' : barge ? 'bRec' : 'recorder', TK = tail ? 'tTimer' : barge ? 'bTimer' : 'vadTimer';
     var onStart = o && o.onStart, fired = false;
     if (!window.MediaRecorder) return Promise.reject(new Error('no_recorder'));
-    var VAD = tail ? { tick: 40, endSilence: (o && o.endSilence) || 900, minSpeech: 300, maxUtter: 15000, noSpeech: 1e9, armQuiet: 0, armMax: 0 }
+    var VAD = tail ? { tick: 40, endSilence: (o && o.endSilence) || 900, minSpeech: 300, maxUtter: 8000, noSpeech: 1e9, armQuiet: 0, armMax: 0 }
             : barge ? { tick: 40, endSilence: 550, minSpeech: 300, maxUtter: 5000, noSpeech: 1e9, armQuiet: 0, armMax: 0 }
-                    : { tick: 40, endSilence: (o && o.endSilence) || 650, minSpeech: (o && o.minSpeech) || 250, maxUtter: 20000, noSpeech: 9000, armQuiet: 150, armMax: 3000 };
+                    : { tick: 40, endSilence: (o && o.endSilence) || 650, minSpeech: (o && o.minSpeech) || 250, maxUtter: (o && o.maxUtter) || 12000, noSpeech: 9000, armQuiet: 150, armMax: 3000 };
     return new Promise(function (res, rej) {
       var type = recType(), data = new Uint8Array(1024), settled = false;
-      var t0 = performance.now(), floor = 0.006, armed = false, quietMs = 0;
+      var t0 = performance.now(), floor = c.noiseFloor || 0.006, armed = false, quietMs = 0;
+      function loud0(r) { return r > Math.max(0.015, floor * 3); }
       var rec, parts, speechMs, silenceMs, inSpeech, startedAt, lastLoud = 0, stopAt = 0;
       var iv = null;                                     /* this recording's own timer (another recording may own c[TK] by now) */
       function done(v, isErr) { if (settled) return; settled = true; clearInterval(iv); if (c[TK] === iv) c[TK] = null; (isErr ? rej : res)(v); }
@@ -697,14 +698,19 @@
         if (rms < 0) {                                   /* no analyser (very old browser): fixed 6 s turn */
           speechMs = VAD.minSpeech; if (now - t0 > 6000) { stopAt = lastLoud = now; rec.stop(); } return;
         }
-        var thr = (barge && !tail) ? Math.min(0.12, Math.max(0.035, floor * 4)) : Math.min(0.08, Math.max(0.015, floor * 3)), loud = rms > thr, quiet = rms < thr * 0.7;
-        if (!loud) floor += (Math.min(rms, 0.05) - floor) * 0.05;             /* learn the room's noise */
+        /* the room's noise: the quietest moment of the last ~4 s (a fan, traffic or a TV is never quieter than itself,
+           while speech always has short gaps), so steady background sound is never taken for speech */
+        var nh = c.noiseHist = c.noiseHist || []; nh.push(rms); if (nh.length > 100) nh.shift();
+        if (nh.length >= 12) { var mn = 1; for (var q = 0; q < nh.length; q++) if (nh[q] < mn) mn = nh[q]; floor = Math.max(0.003, mn); c.noiseFloor = floor; }
+        else if (!loud0(rms)) floor += (Math.min(rms, 0.05) - floor) * 0.05;
+        var strict = barge;                              /* over Ava's voice or while she thinks: only clear speech counts */
+        var thr = strict ? Math.min(0.12, Math.max(0.035, floor * 4)) : Math.min(0.08, Math.max(0.015, floor * 3.5)), loud = rms > thr, quiet = rms < thr * 0.7;
         if (!armed) {                                   /* wait for a short quiet so Ava's echo tail isn't taken as speech */
           quietMs = quiet ? quietMs + VAD.tick : 0;
           if (quietMs >= VAD.armQuiet || now - t0 > VAD.armMax) armed = true; else return;
         }
         if (loud) { inSpeech = true; speechMs += VAD.tick; silenceMs = 0; lastLoud = now; if (!startedAt) startedAt = now; if (!barge) c.heard = true;
-          if (onStart && !fired && speechMs >= 240) { fired = true; try { onStart(); } catch (e) {} }
+          if (onStart && !fired && speechMs >= 400 && now - t0 < 3500) { fired = true; try { onStart(); } catch (e) {} }
           if (speechMs >= 160) { if (!barge) c.listenSpeech = true; else if (!tail) c.bargeSpeech = true; } }
         else if (inSpeech && quiet) silenceMs += VAD.tick;
         if (inSpeech && silenceMs >= VAD.endSilence) {
@@ -712,6 +718,7 @@
           rec._restart = true; rec.stop(); return;      /* a short click or cough: start a fresh recording */
         }
         if (startedAt && now - startedAt > VAD.maxUtter) { stopAt = now; rec.stop(); return; }
+        if (!barge && c.listenSpeech && now - t0 > VAD.maxUtter + 2000 && speechMs >= VAD.minSpeech) { stopAt = now; rec.stop(); return; }   /* hard cap: the answer always goes */
         if (!startedAt && now - t0 > VAD.noSpeech) { rec._discard = true; rec.stop(); done(null); }
       }, VAD.tick);
     });
