@@ -206,6 +206,9 @@ footer{ position:relative; border-top:1px solid rgba(148,163,255,.10); }
   .rx-pre{ display:none !important; }
   .rc-hero, .rc-player, .rc-list, .rc-hero h1 span, .rc-player::before, .rc-buy::after, .rc-menu.open{ animation:none !important; }
 }
+/* DPay online payment button (additional option beside WhatsApp) */
+.rc-buy.rc-dpay{ background:linear-gradient(120deg,#34d399,#22d3ee) !important; background-size:160% 100% !important; color:#04121f !important; box-shadow:0 14px 40px rgba(52,211,153,.22), 0 0 0 1px rgba(255,255,255,.14) inset !important; }
+.rc-buy.rc-dpay:hover{ box-shadow:0 18px 46px rgba(52,211,153,.32) !important; }
 </style>
 </head>
 <body>
@@ -340,6 +343,8 @@ footer{ position:relative; border-top:1px solid rgba(148,163,255,.10); }
       <div class="rc-buy-wrap">
         <a class="rc-buy ra-buylink" href="https://wa.me/923082890324?text=Assalam%20o%20Alaikum%21%20Mujhe%20Rehman%20AI%20Services%20ka%20AI%20Automation%20Mukammal%20Course%20%28n8n%20%2B%20Make.com%2C%2013%20videos%29%20Rs%20200%20mein%20khareedna%20hai.%20Payment%20ka%20tareeqa%20bata%20dein." target="_blank" rel="noopener">💬 Buy full course – Rs 200</a>
         <div class="rc-note">Pay on WhatsApp and get your access code.</div>
+        <a class="rc-buy rc-dpay" data-dpay="automation-course" href="https://pay.dpay.com.pk/l/plink_2i47umv9bm" target="_blank" rel="noopener">💳 Pay Now – Rs 200 (Online)</a>
+        <div class="rc-note">Bank / wallet transfer se pay karein (DPay)</div>
       </div>
       <form class="rc-coupon" id="raCoupon" autocomplete="off" data-price="200">
         <label for="raCouponCode">🏷️ Coupon code</label>
