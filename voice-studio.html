@@ -1,0 +1,76 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Voice Studio for Android — Rehman AI Services</title>
+<meta name="description" content="On-device voice cloning, dubbing and dictation for Android. By Rehman AI Services, based on VoiceStudio (AGPL-3.0).">
+<style>
+:root{--bg:#060814;--text:#eaf0ff;--muted:#9aa8c9;--gold:#f6c453;--acc:#22d3ee;--vio:#8b5cf6}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.55;overflow-x:hidden}
+.orb{position:fixed;border-radius:50%;filter:blur(90px);opacity:.45;z-index:0;pointer-events:none;animation:float 14s ease-in-out infinite}
+.o1{width:480px;height:480px;background:var(--vio);top:-140px;right:-120px}
+.o2{width:420px;height:420px;background:var(--acc);top:35%;left:-160px;animation-delay:-5s;opacity:.28}
+.o3{width:360px;height:360px;background:var(--gold);bottom:-140px;right:12%;animation-delay:-9s;opacity:.18}
+@keyframes float{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(40px,-50px) scale(1.12)}}
+.wrap{max-width:1040px;margin:0 auto;padding:0 22px;position:relative;z-index:1}
+header{padding:20px 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.brand{font-weight:800;letter-spacing:.14em;font-size:14px;color:var(--gold);text-decoration:none}
+nav a{color:var(--muted);text-decoration:none;margin-left:18px;font-size:14px}nav a:hover{color:var(--text)}
+.hero{padding:54px 0 26px;text-align:center}
+.tag{display:inline-block;padding:6px 14px;border:1px solid rgba(255,255,255,.18);border-radius:999px;font-size:12px;letter-spacing:.12em;color:var(--acc);text-transform:uppercase;animation:rise .8s both}
+h1{font-size:clamp(36px,7vw,68px);line-height:1.06;margin:16px 0 14px}
+h1 .w{display:inline-block;opacity:0;transform:translateY(26px);filter:blur(8px);animation:word .8s cubic-bezier(.2,.8,.2,1) forwards}
+h1 .g{background:linear-gradient(110deg,var(--gold),var(--acc),var(--vio),var(--gold));background-size:240% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:word .8s forwards,shine 6s linear infinite}
+@keyframes word{to{opacity:1;transform:none;filter:none}}
+@keyframes shine{to{background-position:240% 0}}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+p.lead{color:var(--muted);font-size:18px;max-width:640px;margin:0 auto 26px;animation:rise .9s .5s both}
+.cta{animation:rise .9s .7s both}
+.btn{display:inline-block;padding:14px 26px;border-radius:999px;font-weight:700;text-decoration:none;margin:6px;transition:transform .2s,box-shadow .25s}
+.btn:hover{transform:translateY(-3px)}
+.primary{background:linear-gradient(120deg,var(--gold),#ffdf8a);color:#1a1200;box-shadow:0 10px 30px rgba(246,196,83,.25)}
+.primary:hover{box-shadow:0 14px 40px rgba(246,196,83,.45)}
+.ghost{border:1px solid rgba(255,255,255,.22);color:var(--text)}
+.wave{display:flex;align-items:center;justify-content:center;gap:5px;height:90px;margin:34px 0 6px}
+.wave i{width:6px;border-radius:6px;background:linear-gradient(180deg,var(--acc),var(--vio));height:14px;animation:bar 1.3s ease-in-out infinite}
+@keyframes bar{0%,100%{height:12px;opacity:.55}50%{height:78px;opacity:1}}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;padding:30px 0}
+.card{background:rgba(255,255,255,.05);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:24px;opacity:0;transform:translateY(34px);transition:opacity .8s,transform .8s,border-color .3s,box-shadow .3s}
+.card.in{opacity:1;transform:none}
+.card:hover{border-color:rgba(246,196,83,.5);box-shadow:0 18px 50px rgba(139,92,246,.25);transform:translateY(-6px)}
+.card h3{margin:0 0 6px;color:var(--gold)}.card p{margin:0;color:var(--muted)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:6px 0 24px}
+.step{padding:18px;border-left:2px solid var(--acc);background:rgba(255,255,255,.03);border-radius:0 16px 16px 0;opacity:0;transform:translateX(-24px);transition:.7s}
+.step.in{opacity:1;transform:none}.step b{color:var(--acc)}
+h2{text-align:center;margin:30px 0 4px;font-size:30px}
+.note{background:rgba(246,196,83,.08);border:1px solid rgba(246,196,83,.3);border-radius:16px;padding:16px 18px;color:#e9dcb4;font-size:14px;margin:18px 0 26px}
+footer{padding:26px 0 46px;color:var(--muted);font-size:13px;text-align:center}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.card,.step,h1 .w{opacity:1!important;transform:none!important;filter:none!important}}
+</style></head><body>
+<div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+<div class="wrap">
+<header><a class="brand" href="index.html">REHMAN AI SERVICES</a>
+<nav><a href="index.html">Home</a><a href="index.html#services">Services</a><a href="courses.html">Courses</a><a href="index.html#contact">Contact</a></nav></header>
+<section class="hero"><span class="tag">New &middot; Android app</span>
+<h1><span class="w" style="animation-delay:.1s">Voice</span> <span class="w" style="animation-delay:.25s">Studio</span> <span class="w g" style="animation-delay:.4s">for&nbsp;Android</span></h1>
+<p class="lead">Voice cloning, dubbing and dictation that run on your own phone. No account, no server needed.</p>
+<div class="cta"><a class="btn primary" href="https://gofile.io/d/CU2VPX7t" target="_blank" rel="noopener">Download APK (148 MB)</a>
+<a class="btn ghost" href="https://github.com/mr0098y67-web/rehman-voice-studio-app" target="_blank" rel="noopener">Source code</a></div>
+<div class="wave" aria-hidden="true" id="wave"></div></section>
+<section class="grid">
+<div class="card"><h3>Voice cloning</h3><p>Create speech in a chosen voice, generated on the device.</p></div>
+<div class="card"><h3>Dubbing</h3><p>Re-voice video and audio into other languages.</p></div>
+<div class="card"><h3>Dictation</h3><p>Speak and get text, processed on the phone.</p></div>
+<div class="card"><h3>Private by design</h3><p>Models run locally. They download once, the first time you pick one.</p></div>
+</section>
+<h2>Get started in 3 steps</h2>
+<div class="steps" style="margin-top:18px">
+<div class="step"><b>1.</b> Download the APK and allow installs from this source.</div>
+<div class="step"><b>2.</b> Open the app and pick a voice model (it downloads once).</div>
+<div class="step"><b>3.</b> Clone, dub or dictate, all on your phone.</div></div>
+<div class="note"><b>Before you install:</b> this is a test (debug) build for Android 10 or newer. The largest voice model needs about 8 GB of RAM. Per the upstream project, builds send crash reports to the upstream project's servers. The default voice-clone model is licensed for non-commercial use only.</div>
+<footer>Rehman AI Services edition, based on VoiceStudio by debpalash (AGPL-3.0). &nbsp;|&nbsp; WhatsApp: 0308 2890324</footer>
+</div>
+<script>
+var w=document.getElementById('wave');for(var i=0;i<42;i++){var e=document.createElement('i');e.style.animationDelay=(i*0.07)+'s';e.style.animationDuration=(1+((i*37)%10)/12)+'s';w.appendChild(e)}
+var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target)}})},{threshold:.15});
+document.querySelectorAll('.card,.step').forEach(function(el,i){el.style.transitionDelay=(i%4)*90+'ms';io.observe(el)});
+</script></body></html>
