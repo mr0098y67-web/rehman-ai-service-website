@@ -1055,6 +1055,13 @@ h2, .section-head h2{ font-family:var(--rx-head) !important; font-weight:700 !im
 <link rel="stylesheet" href="assets/ai-world/world.css">
 </head>
 <body class="is-loading">
+<!-- rx particle intro -->
+<div id="rxIntro" aria-hidden="true">
+  <canvas id="rxIntroCanvas"></canvas>
+  <div class="rx-intro-sub">SERVICE</div>
+  <div class="rx-intro-pct"><b id="rxIntroPct">0</b><span>%</span></div>
+</div>
+
 
 <script>/* login gate: lock the site before first paint until a signed-in user is confirmed */
 document.documentElement.classList.add('auth-gate');</script>
@@ -1137,6 +1144,8 @@ document.documentElement.classList.add('auth-gate');</script>
   <!-- ======================= HERO ======================= -->
   <section class="hero">
     <div class="rx-scene" aria-hidden="true"><canvas id="rxCanvas"></canvas></div>
+    <div class="rx-water" aria-hidden="true"><canvas id="rxWater"></canvas></div>
+
     <div class="wrap hero-grid">
       <div class="reveal">
         <span class="eyebrow">AI Content &amp; Automation Studio</span>
@@ -1157,6 +1166,7 @@ document.documentElement.classList.add('auth-gate');</script>
 
       <div class="hero-visual reveal">
         <div class="rx-orb" aria-hidden="true"><video autoplay muted loop playsinline preload="auto" poster="assets/rx-core-poster.jpg" tabindex="-1"><source src="assets/rx-core.webm" type="video/webm"><source src="assets/rx-core.mp4" type="video/mp4"></video></div>
+        <img class="rx-mascot" src="assets/mascot.png" alt="Rehman AI assistant mascot" width="520" height="640">
         <div class="glass preview">
           <div class="preview-head">
             <span class="preview-dots"><i></i><i></i><i></i></span>
@@ -3310,6 +3320,23 @@ document.documentElement.classList.add('auth-gate');</script>
 })();
 </script>
 <script src="assets/ai-world/loader.js" defer></script>
+<style id="rx-fx-style">
+#rxIntro{position:fixed;inset:0;z-index:99999;background:#05070d;display:block;transition:opacity .7s ease;pointer-events:none}
+#rxIntro.done{opacity:0}
+#rxIntroCanvas{position:absolute;inset:0;width:100%;height:100%}
+.rx-intro-sub{position:absolute;left:0;right:0;top:58%;text-align:center;letter-spacing:.62em;color:#8ea2c8;font-size:12.5px;font-weight:600;text-indent:.62em}
+.rx-intro-pct{position:absolute;left:0;right:0;top:63.5%;text-align:center;color:#e2e8f0;font-size:15px}
+.rx-intro-pct b{font-weight:800;font-size:18px}
+.rx-intro-pct span{opacity:.6;margin-left:2px}
+.rx-water{position:absolute;left:0;right:0;bottom:0;height:46%;pointer-events:none;z-index:0}
+.rx-water canvas{width:100%;height:100%;display:block;opacity:.9}
+.rx-mascot{position:absolute;left:50%;top:50%;transform:translate(-50%,-55%);width:min(290px,62%);height:auto;mix-blend-mode:screen;pointer-events:none;z-index:1;filter:drop-shadow(0 0 36px rgba(34,211,238,.35));animation:rxFlo 5.2s ease-in-out infinite}
+@keyframes rxFlo{0%,100%{transform:translate(-50%,-57%)}50%{transform:translate(-50%,-52%)}}
+.hero-visual .glass.preview{position:relative;z-index:2}
+@media(max-width:640px){.rx-mascot{width:min(210px,58%);top:46%}.rx-water{height:38%}}
+@media(prefers-reduced-motion:reduce){.rx-mascot{animation:none}}
+</style>
+<script src="assets/rx-hero-fx.js?v=1" defer></script>
 </body>
 </html>
 
