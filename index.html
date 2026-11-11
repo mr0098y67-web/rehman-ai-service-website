@@ -1148,6 +1148,7 @@ document.documentElement.classList.add('auth-gate');</script>
 
     <div class="wrap hero-grid">
       <div class="reveal">
+        <div class="rx-avatar"><img src="assets/profile.jpg" alt="Malik - Rehman AI Service" width="256" height="256"></div>
         <span class="eyebrow">AI Content &amp; Automation Studio</span>
         <h1>AI photos, videos and automation — <span class="grad">done for you.</span></h1>
         <p class="lead">Rehman AI Service turns your ideas into polished AI photos, AI videos, edited media and time-saving automation workflows. Transparent PKR pricing, no surprises.</p>
@@ -1166,7 +1167,7 @@ document.documentElement.classList.add('auth-gate');</script>
 
       <div class="hero-visual reveal">
         <div class="rx-orb" aria-hidden="true"><video autoplay muted loop playsinline preload="auto" poster="assets/rx-core-poster.jpg" tabindex="-1"><source src="assets/rx-core.webm" type="video/webm"><source src="assets/rx-core.mp4" type="video/mp4"></video></div>
-        <img class="rx-mascot" src="assets/mascot.png" alt="Rehman AI assistant mascot" width="520" height="640">
+        <span class="rx-mascot-wrap"><img class="rx-mascot" src="assets/mascot.png" alt="Rehman AI assistant mascot" width="520" height="640"></span>
         <div class="glass preview">
           <div class="preview-head">
             <span class="preview-dots"><i></i><i></i><i></i></span>
@@ -3330,13 +3331,17 @@ document.documentElement.classList.add('auth-gate');</script>
 .rx-intro-pct span{opacity:.6;margin-left:2px}
 .rx-water{position:absolute;left:0;right:0;bottom:0;height:46%;pointer-events:none;z-index:0}
 .rx-water canvas{width:100%;height:100%;display:block;opacity:.9}
-.rx-mascot{position:absolute;left:50%;top:50%;transform:translate(-50%,-55%);width:min(290px,62%);height:auto;mix-blend-mode:screen;pointer-events:none;z-index:1;filter:drop-shadow(0 0 36px rgba(34,211,238,.35));animation:rxFlo 5.2s ease-in-out infinite}
-@keyframes rxFlo{0%,100%{transform:translate(-50%,-57%)}50%{transform:translate(-50%,-52%)}}
+.rx-avatar{width:56px;height:56px;border-radius:50%;overflow:hidden;display:inline-flex;border:2px solid rgba(34,211,238,.55);box-shadow:0 0 22px rgba(34,211,238,.35),0 0 0 4px rgba(34,211,238,.08);margin-bottom:16px}
+.rx-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+@media(max-width:640px){.rx-avatar{width:46px;height:46px;margin-bottom:12px}}
+.rx-mascot-wrap{position:absolute;left:50%;top:50%;transform:translate(-50%,-55%);width:min(290px,62%);pointer-events:none;z-index:1;will-change:transform}
+.rx-mascot{display:block;width:100%;height:auto;mix-blend-mode:screen;filter:drop-shadow(0 0 36px rgba(34,211,238,.35));animation:rxFlo 5.2s ease-in-out infinite}
+@keyframes rxFlo{0%,100%{transform:translateY(-3px)}50%{transform:translateY(2px)}}
 .hero-visual .glass.preview{position:relative;z-index:2}
-@media(max-width:640px){.rx-mascot{width:min(210px,58%)}.rx-water{height:38%}}
+@media(max-width:640px){.rx-mascot-wrap{width:min(210px,58%)}.rx-water{height:38%}}
 @media(prefers-reduced-motion:reduce){.rx-mascot{animation:none}}
 </style>
-<script src="assets/rx-hero-fx.js?v=2" defer></script>
+<script src="assets/rx-hero-fx.js?v=3" defer></script>
 </body>
 </html>
 

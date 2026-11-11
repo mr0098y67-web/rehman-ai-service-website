@@ -83,17 +83,82 @@
     window.addEventListener('resize', function(){ clearTimeout(rt); rt = setTimeout(buildTargets, 150); });
   }
 
-  /* ---------- mascot placement (peeks over the card top) ---------- */
+  /* ---------- mascot: placement + life (drifts, follows pointer, reacts) ---------- */
   var mEl = document.querySelector('.rx-mascot');
   var mCard = document.querySelector('.hero-visual .glass.preview');
+  var mWrap = mEl ? mEl.parentElement : null;
   function placeMascot(){
-    if (!mEl || !mCard) return;
-    mEl.style.top = (mCard.offsetTop + 14) + 'px';
+    if (!mWrap || !mCard) return;
+    mWrap.style.top = (mCard.offsetTop + 14) + 'px';
   }
   placeMascot();
   window.addEventListener('resize', placeMascot);
   window.addEventListener('load', placeMascot);
   if (document.fonts && document.fonts.ready) { try { document.fonts.ready.then(placeMascot); } catch(e){} }
+
+  if (mWrap && !reduced){
+    var mHero = document.querySelector('.hero');
+    var tx=0, ty=0, tr=0, ts=1;      /* targets */
+    var cx=0, cy=0, cr=0, cs=1;      /* current */
+    var hopV=0, hopY=0;              /* jump physics */
+    var wig=0, wigT=0;               /* wiggle impulse */
+    var lastPtr=-1e9, nextWander=2600, wx=0, wy=0, wr=0;
+    var mr=null, mrAt=0;
+    function mrect(){
+      if (!mWrap) return;
+      mr = mWrap.getBoundingClientRect();
+      mrAt = performance.now();
+    }
+    mrect();
+    window.addEventListener('resize', mrect);
+
+    function look(e){
+      if (performance.now() - mrAt > 400) mrect();
+      if (!mr) return;
+      lastPtr = performance.now();
+      var hx = mr.left + mr.width/2, hy = mr.top + mr.height*0.38;
+      var dx = e.clientX - hx, dy = e.clientY - hy;
+      var d = Math.hypot(dx, dy);
+      var near = d < Math.max(mr.width*1.05, 110);
+      var px = Math.max(-1, Math.min(1, dx/(mr.width*1.8)));
+      var py = Math.max(-1, Math.min(1, dy/(mr.height*1.4)));
+      var amp = near ? 14 : 22;
+      tx = px*amp; ty = py*amp*0.7 + (near ? -5 : 0);
+      tr = px*(near ? 6 : 4);
+      ts = near ? 1.07 : 1;
+      if (near && d < mr.width*0.5) ts = 1.12;
+    }
+    if (mHero){
+      mHero.addEventListener('pointermove', look);
+      mHero.addEventListener('pointerleave', function(){ tx=0; ty=0; tr=0; ts=1; });
+      mHero.addEventListener('click', function(){
+        if (hopY >= -0.5){ hopV = -8.2; wig = (Math.random()<0.5 ? -1 : 1)*10; }
+      });
+    }
+
+    function mframe(now){
+      /* idle wander when the pointer has been quiet for a while */
+      if (now - lastPtr > 2600){
+        if (now > nextWander){
+          nextWander = now + 3800 + Math.random()*3200;
+          wx = (Math.random()*2-1)*20; wy = (Math.random()*2-1)*10; wr = (Math.random()*2-1)*5;
+          if (Math.random() < 0.4) hopV = -5.5;
+        }
+        tx += (wx - tx)*0.02; ty += (wy - ty)*0.02; tr += (wr - tr)*0.02; ts += (1 - ts)*0.05;
+      }
+      cx += (tx-cx)*0.075; cy += (ty-cy)*0.075; cr += (tr-cr)*0.075; cs += (ts-cs)*0.09;
+      if (hopV || hopY < 0){
+        hopY += hopV; hopV += 0.5;
+        if (hopY > 0){ hopY = 0; hopV *= -0.35; if (Math.abs(hopV) < 1.2) hopV = 0; }
+      }
+      wigT += 0.25; wig *= 0.94;
+      var wob = Math.sin(wigT*2.2)*wig;
+      var bob = Math.sin(now*0.0011)*4;
+      mWrap.style.transform = 'translate(-50%,-55%) translate3d(' + cx.toFixed(2) + 'px,' + (cy + bob + hopY).toFixed(2) + 'px,0) rotate(' + (cr + wob).toFixed(2) + 'deg) scale(' + cs.toFixed(3) + ')';
+      requestAnimationFrame(mframe);
+    }
+    requestAnimationFrame(mframe);
+  }
 
   /* ---------- hero water + ripples ---------- */
   var hero = document.querySelector('.hero');
