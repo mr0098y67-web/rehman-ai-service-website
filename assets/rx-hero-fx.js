@@ -83,6 +83,18 @@
     window.addEventListener('resize', function(){ clearTimeout(rt); rt = setTimeout(buildTargets, 150); });
   }
 
+  /* ---------- mascot placement (peeks over the card top) ---------- */
+  var mEl = document.querySelector('.rx-mascot');
+  var mCard = document.querySelector('.hero-visual .glass.preview');
+  function placeMascot(){
+    if (!mEl || !mCard) return;
+    mEl.style.top = (mCard.offsetTop + 14) + 'px';
+  }
+  placeMascot();
+  window.addEventListener('resize', placeMascot);
+  window.addEventListener('load', placeMascot);
+  if (document.fonts && document.fonts.ready) { try { document.fonts.ready.then(placeMascot); } catch(e){} }
+
   /* ---------- hero water + ripples ---------- */
   var hero = document.querySelector('.hero');
   var wcv = document.getElementById('rxWater');
