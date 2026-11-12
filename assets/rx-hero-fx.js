@@ -88,8 +88,13 @@
   var mCard = document.querySelector('.hero-visual .glass.preview');
   var mWrap = mEl ? mEl.parentElement : null;
   function placeMascot(){
-    if (!mWrap || !mCard) return;
-    mWrap.style.top = (mCard.offsetTop + 14) + 'px';
+    if (!mWrap) return;
+    var hv = document.querySelector('.hero-visual');
+    if (window.innerWidth <= 900 && hv){
+      mWrap.style.top = (hv.offsetTop + Math.round(mWrap.offsetHeight * 0.55) + 8) + 'px';
+    } else {
+      mWrap.style.top = '50%';
+    }
   }
   placeMascot();
   window.addEventListener('resize', placeMascot);
