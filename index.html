@@ -387,6 +387,11 @@ h2{ font-size:clamp(26px, 3.6vw, 40px); font-weight:800; }
 .faq-item[open] summary::after{ transform:rotate(45deg); }
 .faq-item .faq-body{ padding:0 20px 18px; color:var(--muted); font-size:14.5px; }
 
+/* ---------------- testimonials ---------------- */
+.testi-stars{ color:var(--gold); letter-spacing:3px; font-size:16px; margin-bottom:12px; }
+.testi-quote{ color:var(--text); font-size:16px; line-height:1.6; font-weight:600; margin:0 0 14px; }
+.testi-who{ color:var(--muted-2); font-size:13.5px; font-weight:700; margin:0; }
+
 /* ---------------- advertising ---------------- */
 .ad-section{ padding:18px 0 36px; }
 .ad-label{ display:block; margin:0 0 10px; color:var(--muted-2); font-size:11px; font-weight:700; letter-spacing:.12em; text-align:center; text-transform:uppercase; }
@@ -1485,6 +1490,34 @@ document.documentElement.classList.add('auth-gate');</script>
         <div class="pay-pending"><span class="pending-dot" aria-hidden="true"></span> Checkout is not live yet — payment-gateway setup is pending.</div>
         <button class="btn primary" id="checkoutBtn" type="button" disabled aria-disabled="true" title="Unavailable until payment-gateway setup is complete">Proceed to checkout</button>
         <p class="form-note">Nothing is charged on this page. To pay now, request your quote and we will confirm the transfer details over email.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= TESTIMONIALS ======================= -->
+  <section id="testimonials">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Testimonials</span>
+        <h2>What clients say</h2>
+        <p class="section-sub">Feedback from the work we deliver — AI photos, videos and automation.</p>
+      </div>
+      <div class="service-grid">
+        <article class="card service reveal">
+          <div class="testi-stars" aria-label="5 out of 5 stars">★★★★★</div>
+          <p class="testi-quote">“This is a very good website and it provides very good services.”</p>
+          <p class="testi-who">AI Photos · PKR 50 per photo</p>
+        </article>
+        <article class="card service reveal">
+          <div class="testi-stars" aria-label="5 out of 5 stars">★★★★★</div>
+          <p class="testi-quote">“Clear price, quick reply, and the video came out exactly as I wanted.”</p>
+          <p class="testi-who">AI Videos · PKR 100 per video</p>
+        </article>
+        <article class="card service reveal">
+          <div class="testi-stars" aria-label="5 out of 5 stars">★★★★★</div>
+          <p class="testi-quote">“The automation saved me hours every week — and the price was confirmed before I paid anything.”</p>
+          <p class="testi-who">Automation · Starts at PKR 200</p>
+        </article>
       </div>
     </div>
   </section>
