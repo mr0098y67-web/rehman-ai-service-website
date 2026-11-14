@@ -18,9 +18,11 @@
                 never cut her off. To stop her mid-sentence, tap the orb.
                 If the visitor goes on talking while Ava is thinking, that extra
                 speech is merged into the same answer instead of being lost.
-     end     -> the red "Call khatam karein / End call" button is fixed at the
-                bottom of the screen for the whole call (plus the button inside
-                the card, the X, and saying "call band karo" / "Allah Hafiz").
+     end     -> ONE red "Call khatam karein / End call" button inside the
+                card, sticky at the card's bottom for the whole call (plus the
+                X, and saying "call band karo" / "Allah Hafiz"). The old
+                fixed duplicate button at the bottom of the screen was
+                removed on 2026-11-14: it showed a second identical button.
    Voice commands (checked on the transcript before any AI reply): "call band
    karo" / "Allah Hafiz" ends the call, "chup karo" puts Ava on hold (silent,
    call stays open), "shuru karo" brings her back.
@@ -92,21 +94,16 @@
       '</div>';
     document.body.appendChild(btn);
     document.body.appendChild(ov);
-    /* Fixed End Call button, outside the scrolling card: always on screen during a live call. */
-    var endFab = el('button', 'rai-va-end-fab');
-    endFab.type = 'button';
-    endFab.hidden = true;
-    endFab.setAttribute('aria-label', 'Call khatam karein (End call)');
-    endFab.textContent = '\u2715  Call khatam karein';
-    endFab.addEventListener('click', function () { endCall('Call ended. Shukriya!'); });
-    ov.appendChild(endFab);
+    /* No fixed End Call button here: the in-card End button (.rai-va-end,
+       sticky at the card's bottom) is the only "Call khatam karein" button.
+       A second fixed one used to sit below the card and looked duplicated. */
     if (CFG.proxyUrl) { try { var pc = document.createElement('link'); pc.rel = 'preconnect'; pc.href = CFG.proxyUrl.replace(/\/$/, ''); pc.crossOrigin = 'anonymous'; document.head.appendChild(pc); } catch (e) {} }
     btn.addEventListener('pointerdown', warmUp, { passive: true });
     ui = {
       btn: btn, ov: ov, card: ov.querySelector('.rai-va-card'), status: ov.querySelector('.rai-va-status'),
       stage: ov.querySelector('.rai-va-stage'), orb: ov.querySelector('.rai-va-orb'), wave: ov.querySelector('.rai-va-wave'),
       hint: ov.querySelector('.rai-va-hint'), caption: ov.querySelector('.rai-va-caption'), err: ov.querySelector('.rai-va-err'),
-      start: ov.querySelector('.rai-va-start'), end: ov.querySelector('.rai-va-end'), endFab: ov.querySelector('.rai-va-end-fab'), wa: ov.querySelector('.rai-va-wa'),
+      start: ov.querySelector('.rai-va-start'), end: ov.querySelector('.rai-va-end'), wa: ov.querySelector('.rai-va-wa'),
       x: ov.querySelector('.rai-va-x'), langBtns: ov.querySelectorAll('.rai-va-lang button'),
       book: ov.querySelector('.rai-va-book'), bookWa: ov.querySelector('.rai-va-book-wa')
     };
@@ -151,7 +148,6 @@
     if (statusText != null) ui.status.textContent = statusText;
     var live = (s === 'live' || s === 'connecting');
     ui.start.hidden = live; ui.end.hidden = !live;
-    if (ui.endFab) ui.endFab.hidden = !live;
     ui.x.setAttribute('aria-label', live ? 'End call' : 'Close');
     if (s !== 'error') { ui.err.hidden = true; ui.wa.hidden = true; ui.card.removeAttribute('data-err'); }
     ui.start.textContent = (s === 'ended' || s === 'error') ? 'Call again' : 'Start talking';

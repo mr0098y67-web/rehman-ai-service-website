@@ -83,15 +83,10 @@ html.rai-va-lock .rai-wa-btn,html.rai-va-lock .rai-va-btn{visibility:hidden}
 .rai-va-fine{margin:12px 0 0;font-size:11.5px;line-height:1.5;color:#7f88a8}
 .rai-va-fine a{color:#a6aecb}
 
-/* End Call: big red button inside the card (sticky, never scrolls away) + fixed button at the bottom of the screen */
+/* End Call: ONE big red button inside the card (sticky, never scrolls away).
+   The old fixed duplicate button (.rai-va-end-fab) was removed 2026-11-14:
+   it showed a second identical "Call khatam karein" button below the card. */
 .rai-va-end{flex:1;max-width:200px;color:#fff;background:linear-gradient(135deg,#ef4444,#b91c1c);box-shadow:0 8px 24px rgba(239,68,68,.3)}
-.rai-va-end-fab{position:fixed;left:50%;transform:translateX(-50%);bottom:max(16px,env(safe-area-inset-bottom));z-index:2147483001;
-  padding:12px 22px;border-radius:999px;border:0;cursor:pointer;color:#fff;
-  font:700 15px/1.2 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
-  background:linear-gradient(135deg,#ef4444,#b91c1c);box-shadow:0 10px 30px rgba(239,68,68,.45)}
-.rai-va-end-fab:hover{filter:brightness(1.08)}
-.rai-va-end-fab:focus-visible{outline:2px solid #22d3ee;outline-offset:3px}
-.rai-va-end-fab[hidden]{display:none !important}
 
 /* the call card always fits the visible screen (phones with address bar + nav bar) */
 .rai-va-overlay{top:0;right:0;bottom:auto;left:0;height:100vh;height:100dvh;box-sizing:border-box;
