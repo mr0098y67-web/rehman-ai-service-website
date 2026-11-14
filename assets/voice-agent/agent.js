@@ -9,7 +9,8 @@
      think   -> Ava's backend (free AI model; the API key stays on the server, never in this file)
      speak   -> natural female voice from the backend: ElevenLabs "Sarah" first; when that is unavailable (limit used up, error,
                 slow) the free Microsoft voices (Urdu: "Uzma", English: "Ava"); the browser's own voice as a last fallback
-   End: the red "Call khatam karein / End call" button (always on screen), the X, or saying "call band karo" / "Allah Hafiz".
+   End: the red "Call khatam karein / End call" button (always on screen, inside the card AND as a fixed button at the bottom of the screen), the X, or saying "call band karo" / "Allah Hafiz".
+   Turn-taking (no-interrupt): Ava waits 1.2 s of silence before she takes an answer as finished (longer during booking), and if the visitor goes on talking while she is thinking, that extra speech is merged into the same answer instead of Ava replying mid-sentence. While she speaks, only the voice commands "chup karo" / "call band karo" stop her - ordinary speech over her does not cut her off, and she never starts a reply while the visitor is still talking.
    Voice commands (checked on the transcript before any AI or voice): "call band karo" / "Allah Hafiz" ends the call,
    "chup karo" puts Ava on hold (silent, call stays open), "shuru karo" brings her back. While she speaks, the mic
    only listens for these commands, so "chup karo" works mid-sentence while her own voice can't cut her off.
@@ -80,13 +81,20 @@
       '</div>';
     document.body.appendChild(btn);
     document.body.appendChild(ov);
+    var endFab = el('button', 'rai-va-end-fab');
+    endFab.type = 'button';
+    endFab.hidden = true;
+    endFab.setAttribute('aria-label', 'Call khatam karein (End call)');
+    endFab.textContent = '\u2715  Call khatam karein';
+    endFab.addEventListener('click', function () { endCall('Call ended. Shukriya!'); });
+    ov.appendChild(endFab);
     if (CFG.proxyUrl) { try { var pc = document.createElement('link'); pc.rel = 'preconnect'; pc.href = CFG.proxyUrl.replace(/\/$/, ''); pc.crossOrigin = 'anonymous'; document.head.appendChild(pc); } catch (e) {} }
     btn.addEventListener('pointerdown', warmUp, { passive: true });
     ui = {
       btn: btn, ov: ov, card: ov.querySelector('.rai-va-card'), status: ov.querySelector('.rai-va-status'),
       stage: ov.querySelector('.rai-va-stage'), orb: ov.querySelector('.rai-va-orb'), wave: ov.querySelector('.rai-va-wave'),
       hint: ov.querySelector('.rai-va-hint'), caption: ov.querySelector('.rai-va-caption'), err: ov.querySelector('.rai-va-err'),
-      start: ov.querySelector('.rai-va-start'), end: ov.querySelector('.rai-va-end'), wa: ov.querySelector('.rai-va-wa'),
+      start: ov.querySelector('.rai-va-start'), end: ov.querySelector('.rai-va-end'), endFab: ov.querySelector('.rai-va-end-fab'), wa: ov.querySelector('.rai-va-wa'),
       x: ov.querySelector('.rai-va-x'), langBtns: ov.querySelectorAll('.rai-va-lang button'),
       book: ov.querySelector('.rai-va-book'), bookWa: ov.querySelector('.rai-va-book-wa')
     };
@@ -127,6 +135,7 @@
     if (statusText != null) ui.status.textContent = statusText;
     var live = (s === 'live' || s === 'connecting');
     ui.start.hidden = live; ui.end.hidden = !live;
+    if (ui.endFab) ui.endFab.hidden = !live;
     ui.x.setAttribute('aria-label', live ? 'End call' : 'Close');
     if (s !== 'error') { ui.err.hidden = true; ui.wa.hidden = true; ui.card.removeAttribute('data-err'); }
     ui.start.textContent = (s === 'ended' || s === 'error') ? 'Call again' : 'Start talking';
@@ -142,7 +151,7 @@
     }
     else if (was !== 'speaking') { c.bargeChecks = 0; startBarge(c); }
     ui.hint.textContent = p === 'listening' ? (CFG.lang === 'en-US' ? 'Listening\u2026 speak now' : 'Sun rahi hoon\u2026 bolein') :
-      p === 'thinking' ? 'Soch rahi hoon\u2026' : p === 'speaking' ? 'Ava bol rahi hai \u00b7 tap the orb to interrupt' :
+      p === 'thinking' ? 'Soch rahi hoon\u2026' : p === 'speaking' ? 'Ava bol rahi hai \u00b7 khatam hone ka intezar karein, ya End call dabayein' :
       p === 'paused' ? 'Call hold par hai \u00b7 screen on karein, Ava phir sunegi' :
       p === 'quiet' ? (CFG.lang === 'en-US' ? 'Ava is quiet \u00b7 say \u201cstart\u201d' : 'Ava chup hai \u00b7 \u2018shuru karo\u2019 bolein') : '';
   }
@@ -461,7 +470,7 @@
     var ac = window.AbortController ? new AbortController() : null;
     t.up = performance.now();
     /* still talking after the pause? cancel this request and send both parts together */
-    var tailP = (parts.length < 4 && ac && inBooking(c)) ? startTail(c, function () {
+    var tailP = (parts.length < 4 && ac) ? startTail(c, function () {
       if (c.closed || c.turnSeq !== my || c.phase !== 'thinking' || merged) return;
       merged = tailP; try { ac.abort(); } catch (e) {}
     }) : null;
@@ -624,7 +633,7 @@
   /* A booking answer often has pauses ("mera naam ... Abdul Rehman", "0323 ... 664 ... 4853"), so during a booking
      Ava waits longer before she takes the answer as finished. */
   function inBooking(c) { return !!(c.booking && c.booking.active); }
-  function pauseMs(c) { return inBooking(c) ? (c.booking.asked === 'phone' ? 1800 : 1300) : 650; }
+  function pauseMs(c) { return inBooking(c) ? (c.booking.asked === 'phone' ? 1800 : 1300) : 1200; }  /* no-interrupt: wait 1.2 s of silence, so a mid-sentence pause is not taken as the end */
   /* While Ava is thinking, the mic keeps listening: if the visitor goes on talking (they had only paused), that
      answer is not lost. The request is cancelled and both parts are sent together as one answer. */
   function stopTail(c) {
@@ -654,7 +663,7 @@
     var onStart = o && o.onStart, fired = false;
     if (!window.MediaRecorder) return Promise.reject(new Error('no_recorder'));
     var VAD = tail ? { tick: 40, endSilence: (o && o.endSilence) || 900, minSpeech: 300, maxUtter: 8000, noSpeech: 1e9, armQuiet: 0, armMax: 0 }
-            : barge ? { tick: 40, endSilence: 550, minSpeech: 300, maxUtter: 5000, noSpeech: 1e9, armQuiet: 0, armMax: 0 }
+            : barge ? { tick: 40, endSilence: 550, minSpeech: 500, maxUtter: 5000, noSpeech: 1e9, armQuiet: 0, armMax: 0 }
                     : { tick: 40, endSilence: (o && o.endSilence) || 650, minSpeech: (o && o.minSpeech) || 250, maxUtter: (o && o.maxUtter) || 12000, noSpeech: 9000, armQuiet: 150, armMax: 3000 };
     return new Promise(function (res, rej) {
       var type = recType(), data = new Uint8Array(1024), settled = false;

@@ -163,3 +163,12 @@ html.auth-gate .rai-va-btn,body.auth-locked .rai-va-btn,html.auth-gate .rai-va-o
 .rai-va-card[data-booked] .rai-va-wave{display:none}
 .rai-va-card[data-booked] .rai-va-caption{min-height:0;max-height:4.3em}
 @media (max-height:700px){.rai-va-card[data-booked] .rai-va-stage{transform:scale(.8);margin:-10px 0}}
+
+/* v6: no-interrupt + always-visible End call - fixed button at the bottom of the screen, outside the scrolling card */
+.rai-va-end-fab{position:fixed;left:50%;transform:translateX(-50%);bottom:max(16px,env(safe-area-inset-bottom));z-index:2147483001;
+  padding:12px 22px;border-radius:999px;border:0;cursor:pointer;color:#fff;
+  font:700 15px/1.2 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  background:linear-gradient(135deg,#ef4444,#b91c1c);box-shadow:0 10px 30px rgba(239,68,68,.45)}
+.rai-va-end-fab:hover{filter:brightness(1.08)}
+.rai-va-end-fab:focus-visible{outline:2px solid #22d3ee;outline-offset:3px}
+.rai-va-end-fab[hidden]{display:none !important}
