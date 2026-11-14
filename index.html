@@ -392,6 +392,18 @@ h2{ font-size:clamp(26px, 3.6vw, 40px); font-weight:800; }
 .testi-quote{ color:var(--text); font-size:16px; line-height:1.6; font-weight:600; margin:0 0 14px; }
 .testi-who{ color:var(--muted-2); font-size:13.5px; font-weight:700; margin:0; }
 
+/* ---------------- service finder ---------------- */
+.finder-card{ max-width:820px; margin-inline:auto; padding:28px; }
+.finder-progress{ color:var(--muted-2); font-size:13px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; margin:0 0 12px; }
+.finder-step h3, .finder-result h3{ font-size:20px; margin:0 0 16px; }
+.finder-options{ display:flex; flex-direction:column; gap:10px; }
+.finder-opt{ justify-content:flex-start; text-align:left; }
+.finder-back{ margin-top:16px; }
+.finder-result-label{ color:var(--accent); font-size:13px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; margin:0 0 6px; }
+.finder-detail{ color:var(--muted); font-size:14.5px; margin:12px 0 0; }
+.finder-actions{ display:flex; gap:10px; flex-wrap:wrap; margin:18px 0 6px; }
+@media (min-width: 640px){ .finder-options{ display:grid; grid-template-columns:1fr 1fr; } }
+
 /* ---------------- advertising ---------------- */
 .ad-section{ padding:18px 0 36px; }
 .ad-label{ display:block; margin:0 0 10px; color:var(--muted-2); font-size:11px; font-weight:700; letter-spacing:.12em; text-align:center; text-transform:uppercase; }
@@ -1290,6 +1302,61 @@ document.documentElement.classList.add('auth-gate');</script>
             <button class="btn ghost small" id="resetQuote" type="button">Clear</button>
           </div>
         </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= SERVICE FINDER ======================= -->
+  <section id="service-finder">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Not sure what you need?</span>
+        <h2>Find the right service in 3 questions</h2>
+        <p class="section-sub">Answer three quick questions and we will point you to the right service — then you can request it straight away.</p>
+      </div>
+      <div class="card finder-card reveal" id="finderCard">
+        <p class="finder-progress" id="finderProgress">Question 1 of 3</p>
+        <div class="finder-step" data-step="1">
+          <h3>What do you want?</h3>
+          <div class="finder-options">
+            <button type="button" class="btn ghost finder-opt" data-service="ai-photo">A new AI photo</button>
+            <button type="button" class="btn ghost finder-opt" data-service="ai-video">A new AI video</button>
+            <button type="button" class="btn ghost finder-opt" data-service="editing">Edit a photo or video I already have</button>
+            <button type="button" class="btn ghost finder-opt" data-service="automation">Automate a repeated task</button>
+          </div>
+        </div>
+        <div class="finder-step" data-step="2" hidden>
+          <h3>What is it for?</h3>
+          <div class="finder-options">
+            <button type="button" class="btn ghost finder-opt" data-purpose="Personal or social media">Personal or social media</button>
+            <button type="button" class="btn ghost finder-opt" data-purpose="Business, product or brand">Business, product or brand</button>
+            <button type="button" class="btn ghost finder-opt" data-purpose="An event or memory">An event or memory</button>
+            <button type="button" class="btn ghost finder-opt" data-purpose="Work or a business process">Work or a business process</button>
+          </div>
+          <button type="button" class="btn ghost small finder-back" data-back="1">← Back</button>
+        </div>
+        <div class="finder-step" data-step="3" hidden>
+          <h3>How many do you need?</h3>
+          <div class="finder-options">
+            <button type="button" class="btn ghost finder-opt" data-qty="1">Just 1</button>
+            <button type="button" class="btn ghost finder-opt" data-qty="3">A few (2–5)</button>
+            <button type="button" class="btn ghost finder-opt" data-qty="6">Many (6+)</button>
+            <button type="button" class="btn ghost finder-opt" data-qty="1">Not sure yet</button>
+          </div>
+          <button type="button" class="btn ghost small finder-back" data-back="2">← Back</button>
+        </div>
+        <div class="finder-result" id="finderResult" hidden>
+          <p class="finder-result-label">Your match</p>
+          <h3 id="finderServiceName"></h3>
+          <p class="sc-tag" id="finderServicePrice"></p>
+          <p class="sc-note" id="finderServiceNote"></p>
+          <p class="finder-detail" id="finderDetail"></p>
+          <div class="finder-actions">
+            <button type="button" class="btn primary" id="finderRequest">Request this service</button>
+            <a class="btn ghost" href="#services">See the exact price</a>
+          </div>
+          <button type="button" class="btn ghost small finder-back" id="finderRestart">Start again</button>
+        </div>
       </div>
     </div>
   </section>
@@ -2978,6 +3045,73 @@ document.documentElement.classList.add('auth-gate');</script>
       };
     })(RF.closeModal);
   }
+
+  /* ---------------- service finder ---------------- */
+  (function () {
+    var finder = document.getElementById('service-finder');
+    if (!finder) { return; }
+    var progress = document.getElementById('finderProgress');
+    var result = document.getElementById('finderResult');
+    var state = { service: null, purpose: '', qty: 1 };
+    function showStep(n) {
+      $all('.finder-step', finder).forEach(function (s) { s.hidden = String(s.getAttribute('data-step')) !== String(n); });
+      if (result) { result.hidden = true; }
+      if (progress) { progress.hidden = false; progress.textContent = 'Question ' + n + ' of 3'; }
+    }
+    function showResult() {
+      var svc = AI.findService(state.service);
+      if (!svc) { return; }
+      $all('.finder-step', finder).forEach(function (s) { s.hidden = true; });
+      if (progress) { progress.hidden = true; }
+      var nameEl = document.getElementById('finderServiceName');
+      var priceEl = document.getElementById('finderServicePrice');
+      var noteEl = document.getElementById('finderServiceNote');
+      var detailEl = document.getElementById('finderDetail');
+      if (nameEl) { nameEl.textContent = svc.name; }
+      if (priceEl) { priceEl.textContent = svc.priceLabel + ' ' + svc.unit + (svc.starting ? ' (starting price)' : ''); }
+      if (noteEl) { noteEl.textContent = svc.tagline; }
+      if (detailEl) {
+        var qtyText = state.service === 'automation' ? '1 workflow' : (state.qty === 1 ? '1' : String(state.qty));
+        detailEl.textContent = 'For: ' + (state.purpose || '—') + ' · Quantity: ' + qtyText + '. We confirm the final price and delivery time in your quote reply.';
+      }
+      if (result) { result.hidden = false; }
+    }
+    finder.addEventListener('click', function (e) {
+      var opt = e.target.closest ? e.target.closest('.finder-opt') : null;
+      var back = e.target.closest ? e.target.closest('.finder-back') : null;
+      if (opt) {
+        if (opt.getAttribute('data-service')) { state.service = opt.getAttribute('data-service'); showStep(2); }
+        else if (opt.getAttribute('data-purpose')) { state.purpose = opt.getAttribute('data-purpose'); showStep(3); }
+        else if (opt.getAttribute('data-qty')) { state.qty = parseInt(opt.getAttribute('data-qty'), 10) || 1; showResult(); }
+        return;
+      }
+      if (back && back.getAttribute('data-back')) { showStep(back.getAttribute('data-back')); }
+    });
+    var restart = document.getElementById('finderRestart');
+    if (restart) { restart.addEventListener('click', function () { state = { service: null, purpose: '', qty: 1 }; showStep(1); }); }
+    var requestBtn = document.getElementById('finderRequest');
+    if (requestBtn) {
+      requestBtn.addEventListener('click', function () {
+        var svc = AI.findService(state.service);
+        if (!svc || !grid) { return; }
+        $all('.service', grid).forEach(function (card) {
+          var add = $('.js-add', card);
+          var qty = $('.js-qty', card);
+          var isMatch = card.getAttribute('data-service-id') === state.service;
+          if (add) { add.checked = isMatch; }
+          if (qty) { qty.value = isMatch ? String(state.service === 'automation' ? 1 : state.qty) : '1'; }
+          syncCardState(card);
+        });
+        renderQuote();
+        if (messageInput && !messageInput.value) {
+          messageInput.value = 'Hi, I would like ' + svc.name + ' (' + svc.priceLabel + ' ' + svc.unit + ').';
+        }
+        var contact = document.getElementById('contact');
+        if (contact && contact.scrollIntoView) { contact.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); }
+        showToast('Service selected — fill in your details to request a quote.');
+      });
+    }
+  })();
 
   /* ---------------- first paint ---------------- */
   syncAll();
