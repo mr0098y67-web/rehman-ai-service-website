@@ -3227,6 +3227,8 @@ document.documentElement.classList.add('auth-gate');</script>
 </script>
 <!-- redesign: progress bar + animated hero scene + motion helpers (visual only) -->
 <div class="rx-progress" id="rxProgress" aria-hidden="true"></div>
+<button id="backToTop" type="button" aria-label="Back to top" hidden style="position:fixed;right:18px;bottom:18px;z-index:90;padding:10px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:rgba(6,9,22,.85);color:#fff;cursor:pointer;">&#8593; Top</button>
+<script>(function(){var b=document.getElementById('backToTop');if(!b)return;function t(){b.hidden=window.scrollY<600;}window.addEventListener('scroll',t,{passive:true});t();b.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});})();</script>
 <script>
 /* Rehman AI Services — redesign motion layer. Visual only: reads no form data, touches no auth/pricing code. */
 (function () {
