@@ -101,6 +101,19 @@
   window.addEventListener('load', placeMascot);
   if (document.fonts && document.fonts.ready) { try { document.fonts.ready.then(placeMascot); } catch(e){} }
 
+  /* Avatar is a button: tap/click it to open the Ava voice agent, like
+     tapping an assistant's profile avatar to talk to it. Works even with
+     reduced motion, and even if the voice-agent script has not loaded yet. */
+  if (mWrap && mWrap.tagName === 'BUTTON') {
+    mWrap.addEventListener('click', function () {
+      try {
+        if (window.RaiVoiceAgent && window.RaiVoiceAgent.open) { window.RaiVoiceAgent.open(); return; }
+        var vaBtn = document.querySelector('.rai-va-btn');
+        if (vaBtn) vaBtn.click();
+      } catch (e) {}
+    });
+  }
+
   if (mWrap && !reduced){
     var mHero = document.querySelector('.hero');
     var tx=0, ty=0, tr=0, ts=1;      /* targets */
@@ -116,6 +129,17 @@
     }
     mrect();
     window.addEventListener('resize', mrect);
+
+    /* Scroll react: scrolling up/down makes the avatar bob and tilt in
+       that direction, then settle back. Fades out a moment after scrolling. */
+    var lastScrollY = window.scrollY || 0, scrollTy = 0, scrollTr = 0, scrollTs = 1;
+    window.addEventListener('scroll', function () {
+      var y = window.scrollY || 0, d = y - lastScrollY; lastScrollY = y;
+      if (Math.abs(d) < 3) return;
+      var dir = d > 0 ? 1 : -1;
+      scrollTy = dir * -9; scrollTr = dir * 5; scrollTs = 1.07;
+      lastPtr = performance.now();
+    }, { passive: true });
 
     function look(e){
       if (performance.now() - mrAt > 400) mrect();
@@ -152,6 +176,7 @@
         tx += (wx - tx)*0.02; ty += (wy - ty)*0.02; tr += (wr - tr)*0.02; ts += (1 - ts)*0.05;
       }
       cx += (tx-cx)*0.075; cy += (ty-cy)*0.075; cr += (tr-cr)*0.075; cs += (ts-cs)*0.09;
+      scrollTy *= 0.9; scrollTr *= 0.9; scrollTs += (1 - scrollTs) * 0.1;
       if (hopV || hopY < 0){
         hopY += hopV; hopV += 0.5;
         if (hopY > 0){ hopY = 0; hopV *= -0.35; if (Math.abs(hopV) < 1.2) hopV = 0; }
@@ -159,7 +184,7 @@
       wigT += 0.25; wig *= 0.94;
       var wob = Math.sin(wigT*2.2)*wig;
       var bob = Math.sin(now*0.0011)*4;
-      mWrap.style.transform = 'translate(-50%,-55%) translate3d(' + cx.toFixed(2) + 'px,' + (cy + bob + hopY).toFixed(2) + 'px,0) rotate(' + (cr + wob).toFixed(2) + 'deg) scale(' + cs.toFixed(3) + ')';
+      mWrap.style.transform = 'translate(-50%,-55%) translate3d(' + cx.toFixed(2) + 'px,' + (cy + bob + hopY + scrollTy).toFixed(2) + 'px,0) rotate(' + (cr + wob + scrollTr).toFixed(2) + 'deg) scale(' + (cs * scrollTs).toFixed(3) + ')';
       requestAnimationFrame(mframe);
     }
     requestAnimationFrame(mframe);

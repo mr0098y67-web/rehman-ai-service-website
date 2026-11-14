@@ -1145,7 +1145,7 @@ document.documentElement.classList.add('auth-gate');</script>
   <section class="hero">
     <div class="rx-scene" aria-hidden="true"><canvas id="rxCanvas"></canvas></div>
     <div class="rx-water" aria-hidden="true"><canvas id="rxWater"></canvas></div>
-    <span class="rx-mascot-wrap"><img class="rx-mascot" src="assets/avatar.png" alt="Rehman AI assistant" width="1122" height="1402"></span>
+    <button type="button" class="rx-mascot-wrap" aria-label="Ava se baat karein — AI voice agent kholein"><img class="rx-mascot" src="assets/avatar.png" alt="Rehman AI assistant" width="1122" height="1402"><span class="rx-mascot-label">Ava se baat karein</span></button>
 
     <div class="wrap hero-grid">
       <div class="reveal">
@@ -3361,15 +3361,21 @@ document.documentElement.classList.add('auth-gate');</script>
 .rx-intro-pct span{opacity:.6;margin-left:2px}
 .rx-water{position:absolute;left:0;right:0;bottom:0;height:46%;pointer-events:none;z-index:0}
 .rx-water canvas{width:100%;height:100%;display:block;opacity:.9}
-.rx-mascot-wrap{position:absolute;left:50%;top:50%;transform:translate(-50%,-55%);width:min(350px,32vw);pointer-events:none;z-index:0;will-change:transform}
-.rx-mascot{display:block;width:100%;height:auto;filter:drop-shadow(0 0 36px rgba(34,211,238,.35));animation:rxFlo 5.2s ease-in-out infinite}
+/* Ava profile avatar: small, round, centred in the hero (2026-11-14).
+   Was a large 350px full-body image; now a small round profile picture,
+   like a chat avatar. Clicking it opens the Ava voice agent. */
+.rx-mascot-wrap{position:absolute;left:50%;top:50%;transform:translate(-50%,-55%);width:min(148px,34vw);height:min(148px,34vw);padding:0;border:3px solid rgba(34,211,238,.55);border-radius:50%;overflow:visible;background:radial-gradient(circle at 35% 30%,#fdf6e3,#e8d9b0 70%);cursor:pointer;pointer-events:auto;z-index:3;will-change:transform;box-shadow:0 0 36px rgba(34,211,238,.35),0 10px 30px rgba(0,0,0,.45)}
+.rx-mascot{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:50% 6%;animation:rxFlo 5.2s ease-in-out infinite}
+.rx-mascot-label{position:absolute;left:50%;top:calc(100% + 8px);transform:translateX(-50%);white-space:nowrap;padding:5px 11px;border-radius:999px;border:1px solid rgba(34,211,238,.35);background:rgba(10,12,24,.88);color:#eef1fb;font:600 12px/1.2 "Inter",system-ui,sans-serif}
+.rx-mascot-wrap:hover{border-color:rgba(34,211,238,.9);box-shadow:0 0 44px rgba(34,211,238,.55),0 10px 30px rgba(0,0,0,.45)}
+.rx-mascot-wrap:focus-visible{outline:2px solid #22d3ee;outline-offset:4px}
 @keyframes rxFlo{0%,100%{transform:translateY(-3px)}50%{transform:translateY(2px)}}
 .hero-visual .glass.preview{position:relative;z-index:2}
-@media(max-width:900px){.hero-visual{padding-top:300px}.rx-mascot-wrap{width:min(220px,58%)}}
+@media(max-width:900px){.hero-visual{padding-top:300px}.rx-mascot-wrap{width:min(112px,30vw);height:min(112px,30vw)}}
 @media(max-width:640px){.rx-water{height:38%}}
 @media(prefers-reduced-motion:reduce){.rx-mascot{animation:none}}
 </style>
-<script src="assets/rx-hero-fx.js?v=4" defer></script>
+<script src="assets/rx-hero-fx.js?v=5" defer></script>
 </body>
 </html>
 
